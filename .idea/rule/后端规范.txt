@@ -1,0 +1,2905 @@
+# 后端工程规范 | Backend Engineering Standards
+# 对标大厂最佳实践：Spring / Microsoft / Google / Oracle / SAP
+
+================================================================================
+文档元数据 | Document Metadata
+================================================================================
+版本号 | Version:        v2.0.1
+发布日期 | Release Date:  2025-01-15
+最后修订 | Last Revised: 2026-03-29
+生效日期 | Effective Date: 2025-01-15
+所有者 | Owner:         后端架构组
+维护者 | Maintainer:    基础设施团队
+评审人 | Reviewers:     后端TL / 架构委员会 / 安全组
+下次复审 | Next Review:   2026-01-15（年度复审）
+
+变更历史 | Change History:
+| 版本 | 日期       | 变更说明                           | 变更人 |
+|------|------------|-----------------------------------|--------|
+| v2.0 | 2025-01-15 | 完整重构：补充架构/API/安全/微服务    | 后端架构组 |
+| v1.0 | 2024-xx-xx | 初始版本                          | -      |
+
+引用标准 | Referenced Standards:
+- JSR 000 Java Language Specification
+- JSR 339 Java EE 7 Specification
+- RFC 2119 KEYWORDS (MUST/SHOULD/MAY)
+- RFC 7519 JSON Web Token (JWT)
+- RFC 6749 OAuth 2.0
+- RFC 6750 The OAuth 2.0 Authorization Framework
+- ISO/IEC 27001:2022 信息安全管理体系
+- OWASP Top 10 Web Application Security Risks
+- OWASP ASVS 4.0 Application Security Verification Standard
+- Google Java Style Guide
+- Oracle Java Code Conventions
+- Spring Framework Reference Documentation
+- Spring Boot Best Practices
+- Microservices Patterns (Chris Richardson)
+- Domain-Driven Design (Eric Evans)
+- Building Microservices (Sam Newman)
+- Clean Architecture (Robert C. Martin)
+
+变更流程 | Change Process:
+1. 提案：提交RFC或ADR说明变更原因和影响范围
+2. 评审：后端架构委员会评审（至少2名LGTM）
+3. 公示：变更公示期7天，收集反馈
+4. 发布：更新版本号和变更历史
+5. 培训：重大变更需组织团队培训
+
+================================================================================
+目录 | Table of Contents
+================================================================================
+0.  基本原则与术语表
+1.  架构设计规范（MUST）
+2.  分层架构规范（MUST）
+3.  RESTful API设计规范（MUST）
+4.  Controller层规范（MUST）
+5.  Service层规范（MUST）
+6.  Mapper/DAO层规范（MUST）
+7.  DTO/VO/Entity规范（MUST）
+8.  Spring Boot配置规范（MUST）
+9.  微服务架构规范（MUST）
+10. 安全规范（MUST）
+11. 数据库规范（MUST）
+12. 缓存与分布式锁（MUST）
+13. 消息队列规范（MUST）
+14. 异常与错误码规范（MUST）
+15. 可观测性规范（MUST）
+16. 测试规范（MUST）
+17. CI/CD与部署规范（MUST）
+18. 性能与调优规范（MUST）
+19. 文档规范（MUST）
+20. 附录：配置示例与参考资源
+
+================================================================================
+0. 基本原则与术语表 | General Principles & Glossary
+================================================================================
+0.1 规范分级说明 | Specification Levels
+- MUST（必须）：强制要求，违反将导致质量/安全/稳定性风险
+- SHOULD（应该）：强烈推荐，例外需审批和文档记录
+- MAY（可以）：可选建议，根据场景自行决定
+- MUST NOT（禁止）：严格禁止，违反将触发违规处理
+
+0.2 适用范围 | Scope
+- 适用于所有后端项目：Spring Boot / Spring Cloud / 微服务
+- 适用于所有环境：开发/测试/预发/生产
+- 适用于所有语言：Java / Kotlin / Groovy（以Java为主）
+
+0.3 例外与豁免机制 | Exceptions & Waivers
+- 例外必须经后端架构组审批
+- 例外必须包含：原因/范围/风险/有效期/回滚方案/追踪编号
+- 例外到期必须复审或清理
+- 验证方式：例外审批记录/RFC
+
+0.4 违规处理 | Violation Handling
+- MUST级别违规：立即修复，并提交RCA
+- SHOULD级别违规：5个工作日内修复或申请例外
+- MAY级别违规：建议采纳，无强制要求
+- 验证方式：违规跟踪系统/代码审查
+
+0.5 术语表 | Glossary
+
+| 中文术语 | 英文术语 | 定义 |
+|----------|----------|------|
+| 代码审查 | Code Review | 对代码变更的系统性检查 |
+| 审查清单 | Review Checklist | 代码审查时需要检查的项目列表 |
+| 回滚 | Rollback | 将系统恢复到之前稳定版本的操作 |
+| 幂等 | Idempotent | 同一操作执行多次与执行一次效果相同 |
+| 熔断 | Circuit Breaker | 故障检测后自动切断请求的保护机制 |
+| 降级 | Degradation | 牺牲非核心功能保证核心可用的策略 |
+| 限流 | Rate Limiting | 控制请求速率的保护机制 |
+| 服务水平目标 | SLO | Service Level Objective，服务性能目标 |
+| 服务水平协议 | SLA | Service Level Agreement，服务承诺协议 |
+| 链路追踪 | Distributed Tracing | 追踪分布式系统中请求路径的技术 |
+| 服务网格 | Service Mesh | 基础设施层的服务间通信管理 |
+| 领域驱动设计 | DDD | Domain-Driven Design，领域驱动设计 |
+| CQRS | Command Query Responsibility Segregation | 命令查询责任分离 |
+| 事件溯源 | Event Sourcing | 通过事件持久化领域状态 |
+| 最终一致性 | Eventual Consistency | 数据在一段时间后达到一致 |
+| Saga模式 | Saga Pattern | 长事务的分布式协调模式 |
+
+================================================================================
+1. 架构设计规范（MUST）| Architecture Design Standards
+================================================================================
+1.1 架构原则 | Architecture Principles
+MUST 1.1.01 单一职责原则（SRP）
+- 一个类/模块/服务只负责一个职责
+- 验证方式：代码审查
+
+MUST 1.1.02 开放封闭原则（OCP）
+- 对扩展开放，对修改封闭
+- 通过抽象和多态实现
+- 验证方式：代码审查
+
+MUST 1.1.03 依赖倒置原则（DIP）
+- 高层模块不依赖低层模块，两者都依赖抽象
+- 抽象不依赖具体，具体依赖抽象
+- 验证方式：架构审查
+
+MUST 1.1.04 接口隔离原则（ISP）
+- 客户端不应依赖它不需要的接口
+- 接口应细粒度，职责单一
+- 验证方式：代码审查
+
+MUST 1.1.05 最少知识原则（LoD）/迪米特法则
+- 对象之间应最少交互
+- 只与直接朋友通信
+- 验证方式：代码审查
+
+1.2 分层架构模式 | Layered Architecture Pattern
+MUST 1.2.01 推荐分层结构
+```
+┌─────────────────────────────────────────────────────┐
+│                   API Gateway Layer                 │
+│         （路由、认证、限流、熔断、监控）              │
+└─────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────┐
+│              Presentation Layer (Controller)          │
+│              （参数校验、权限校验、请求编排）         │
+└─────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────┐
+│                 Application Layer (Service)           │
+│              （业务逻辑、事务编排、领域服务）         │
+└─────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────┐
+│                  Domain Layer (Domain)                │
+│         （领域模型、领域服务、领域事件、仓储接口）     │
+└─────────────────────────────────────────────────────┘
+                           ↓
+┌─────────────────────────────────────────────────────┐
+│               Infrastructure Layer (Impl)              │
+│              （数据访问、外部服务、技术实现）         │
+└─────────────────────────────────────────────────────┘
+```
+
+MUST 1.2.02 层级依赖规则
+- 上层可以依赖下层，下层不能依赖上层
+- 同层之间通过接口交互
+- 跨层调用禁止（Controller不能直接调用Mapper）
+- 验证方式：架构扫描工具/代码审查
+
+1.3 DDD架构模式 | Domain-Driven Design Pattern
+MUST 1.3.01 战略设计层
+- 定义限界上下文（Bounded Context）
+- 定义上下文映射（Context Mapping）
+- 验证方式：架构文档/架构审查
+
+MUST 1.3.02 战术设计层
+- Entity：实体（有唯一标识）
+- Value Object：值对象（不可变）
+- Aggregate：聚合根（一致性边界）
+- Repository：仓储接口
+- Domain Service：领域服务
+- Domain Event：领域事件
+- 验证方式：代码审查
+
+1.4 设计模式使用规范 | Design Patterns Usage
+MUST 1.4.01 推荐使用的设计模式
+- **工厂模式（Factory）**：对象创建复杂
+- **策略模式（Strategy）**：算法族
+- **模板方法模式（Template Method）**：流程固定，步骤可变
+- **观察者模式（Observer）**：事件驱动
+- **责任链模式（Chain of Responsibility）**：审批流程
+- **装饰器模式（Decorator）**：动态增强功能
+- 验证方式：代码审查
+
+MUST 1.4.02 Spring框架内置模式优先
+- 使用Spring的依赖注入替代手动实现
+- 使用Spring事件机制（ApplicationEvent）替代Observer
+- 使用Spring模板（JdbcTemplate/RestTemplate）
+- 验证方式：代码审查
+
+================================================================================
+2. 分层架构规范（MUST）| Layered Architecture Standards
+================================================================================
+2.1 Controller层 | Controller Layer
+MUST 2.1.01 Controller职责
+- 参数校验（Bean Validation）
+- 权限校验（调用授权服务）
+- 调用Service编排业务逻辑
+- 返回统一响应结构
+- 禁止包含业务逻辑
+- 禁止访问数据库
+- 验证方式：代码审查
+
+MUST 2.1.02 Controller命名
+- 以`*Controller`结尾
+- 以功能模块命名：`UserController`/`OrderController`
+- 验证方式：命名检查
+
+```java
+// 正确示例 ✓
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    @GetMapping("/{id}")
+    public Result<UserVO> getUser(@PathVariable Long id) {
+        return Result.success(userService.getUserById(id));
+    }
+}
+
+// 错误示例 ✗
+@Controller
+public class UserMgr {  // 命名不规范
+    @GetMapping("/user/{id}")
+    public User getUser(@PathVariable Long id) {  // 返回Entity，未包装
+        return userRepository.findById(id);  // 直接访问Repository
+    }
+}
+```
+
+MUST 2.1.03 统一响应结构
+```java
+/**
+ * 统一响应结构
+ * @param <T> 数据类型
+ */
+public class Result<T> {
+    private Integer code;
+    private String message;
+    private T data;
+    private String traceId;
+    private Long timestamp;
+
+    // 成功响应
+    public static <T> Result<T> success(T data) {
+        Result<T> result = new Result<>();
+        result.setCode(200);
+        result.setMessage("success");
+        result.setData(data);
+        result.setTraceId(MDC.get("traceId"));
+        result.setTimestamp(System.currentTimeMillis());
+        return result;
+    }
+
+    // 失败响应
+    public static <T> Result<T> error(Integer code, String message) {
+        Result<T> result = new Result<>();
+        result.setCode(code);
+        result.setMessage(message);
+        result.setTraceId(MDC.get("traceId"));
+        result.setTimestamp(System.currentTimeMillis());
+        return result;
+    }
+
+    // 分页响应
+    public static <T> Result<PageInfo<T>> page(Page<T> page) {
+        return success(PageInfo.of(page));
+    }
+}
+```
+
+2.2 Service层 | Service Layer
+MUST 2.2.01 Service接口规范
+- 所有Service必须定义接口
+- 接口命名：`*Service`
+- 实现类命名：`*ServiceImpl`
+- 验证方式：命名检查
+
+MUST 2.2.02 Service职责
+- 业务逻辑处理
+- 事务管理
+- 领域模型转换
+- 外部服务调用
+- 验证方式：代码审查
+
+MUST 2.2.03 事务边界
+```java
+@Service
+@Transactional(readOnly = true)
+public class OrderServiceImpl implements OrderService {
+
+    @Transactional(rollbackFor = Exception.class, timeout = 30)
+    public Order createOrder(CreateOrderCmd cmd) {
+        // 1. 参数校验
+        validateCreateOrder(cmd);
+
+        // 2. 业务逻辑
+        Order order = buildOrder(cmd);
+
+        // 3. 持久化
+        orderMapper.insert(order);
+
+        // 4. 发布领域事件
+        eventPublisher.publish(new OrderCreatedEvent(order.getId()));
+
+        return order;
+    }
+}
+```
+
+MUST 2.2.04 只读事务优化
+- 查询方法使用`@Transactional(readOnly = true)`
+- 避免不必要的写锁
+- 验证方式：代码审查
+
+2.3 Mapper/DAO层 | Mapper/DAO Layer
+MUST 2.3.01 Mapper接口规范
+- 继承`BaseMapper<T>`（MyBatis-Plus）
+- 命名：`*Mapper`
+- 验证方式：命名检查
+
+```java
+// 正确示例 ✓
+@Mapper
+public interface UserMapper extends BaseMapper<UserDO> {
+
+    /**
+     * 根据用户名查询用户
+     * @param username 用户名
+     * @return 用户DO，不存在返回null
+     */
+    UserDO selectByUsername(@Param("username") String username);
+}
+
+// 错误示例 ✗
+@Mapper
+public interface UserDAO {  // 命名不规范
+    User findUser(String name);  // 方法命名不规范
+}
+```
+
+MUST 2.3.02 禁止在Mapper中拼接SQL
+- 必须使用注解或XML定义SQL
+- 必须使用`#{}`参数化
+- 验证方式：SQL扫描
+
+================================================================================
+3. RESTful API设计规范（MUST）| RESTful API Standards
+================================================================================
+3.1 URL设计 | URL Design
+MUST 3.1.01 URL命名规范
+- 使用小写字母
+- 使用连字符`-`分隔单词
+- 使用复数名词表示资源
+- 避免使用动词，使用HTTP方法表示操作
+
+```
+正确示例 ✓:
+GET    /api/users           # 获取用户列表
+GET    /api/users/{id}      # 获取单个用户
+POST   /api/users           # 创建用户
+PUT    /api/users/{id}      # 更新用户
+PATCH  /api/users/{id}      # 部分更新
+DELETE /api/users/{id}      # 删除用户
+GET    /api/users/{id}/orders # 获取用户的订单
+
+错误示例 ✗:
+GET    /api/getUsers         # 使用动词
+GET    /api/user/{id}       # 使用单数
+POST   /api/createUser      # 使用动词
+GET    /api/listUsers       # 使用动词
+```
+
+MUST 3.1.02 查询参数规范
+```
+分页: ?page=1&size=20&sort=createdAt:desc
+过滤: ?status=ACTIVE&type=VIP
+搜索: ?keyword=iphone&category=phone
+范围: ?priceMin=1000&priceMax=5000&dateFrom=2024-01-01
+```
+
+3.2 HTTP方法使用 | HTTP Methods
+MUST 3.2.01 方法语义
+```
+GET    - 查询资源，幂等、安全
+POST   - 创建资源，非幂等
+PUT    - 全量更新资源，幂等
+PATCH  - 部分更新资源，幂等
+DELETE - 删除资源，幂等
+```
+
+MUST 3.2.02 状态码规范
+```
+200 OK              - 成功
+201 Created         - 创建成功
+204 No Content      - 删除成功/更新无返回
+400 Bad Request     - 请求参数错误
+401 Unauthorized    - 未认证
+403 Forbidden       - 无权限
+404 Not Found       - 资源不存在
+409 Conflict        - 资源冲突
+422 Unprocessable  - 业务逻辑错误
+429 Too Many Requests - 限流
+500 Internal Error  - 服务器错误
+503 Service Unavailable - 服务不可用
+```
+
+3.3 API版本控制 | API Versioning
+MUST 3.3.01 版本控制策略
+- 使用URL路径版本：`/api/v1/users`
+- 或使用请求头版本：`Accept: application/vnd.api.v1+json`
+- 验证方式：API审查
+
+================================================================================
+4. Controller层规范（MUST）| Controller Layer Standards
+================================================================================
+4.1 参数校验 | Parameter Validation
+MUST 4.1.01 Bean Validation
+```java
+// DTO定义
+public class CreateUserDTO {
+
+    @NotBlank(message = "用户名不能为空")
+    @Length(min = 2, max = 20, message = "用户名长度2-20字符")
+    private String username;
+
+    @NotBlank(message = "邮箱不能为空")
+    @Email(message = "邮箱格式不正确")
+    private String email;
+
+    @NotBlank(message = "手机号不能为空")
+    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
+    private String phone;
+
+    @NotNull(message = "类型不能为空")
+    private UserType userType;
+}
+
+// Controller使用
+@PostMapping
+public Result<UserVO> create(@Valid @RequestBody CreateUserDTO dto) {
+    // ...
+}
+```
+
+MUST 4.1.02 自定义校验器
+```java
+@Target({ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = PhoneValidator.class)
+public @interface Phone {
+    String message() default "手机号格式不正确";
+    Class<?>[] groups() default {};
+}
+
+public class PhoneValidator implements ConstraintValidator<Phone, String> {
+    @Override
+    public boolean isValid(String value, ConstraintValidatorContext context) {
+        return value != null && value.matches("^1[3-9]\\d{9}$");
+    }
+}
+```
+
+4.2 禁止占位实现 | No Placeholder Implementation
+MUST 4.2.01 禁止返回假数据
+```java
+// 禁止模式 ✗
+@GetMapping("/users/{id}")
+public Result<UserVO> getUser(@PathVariable Long id) {
+    return Result.success(new UserVO());  // 空对象，伪数据
+}
+
+// 禁止模式 ✗
+@GetMapping("/list")
+public Result<List<UserVO>> list() {
+    return Result.success(Collections.emptyList());  // 空列表，伪装成功
+}
+
+// 正确模式 ✓
+@GetMapping("/users/{id}")
+public Result<UserVO> getUser(@PathVariable Long id) {
+    UserVO user = userService.getUserById(id);
+    if (user == null) {
+        return Result.error(404, "用户不存在");
+    }
+    return Result.success(user);
+}
+```
+
+================================================================================
+5. Service层规范（MUST）| Service Layer Standards
+================================================================================
+5.1 依赖注入 | Dependency Injection
+MUST 5.1.01 构造器注入优先
+```java
+// 正确示例 ✓ - 构造器注入
+@Service
+public class OrderServiceImpl implements OrderService {
+
+    private final OrderMapper orderMapper;
+    private final ProductService productService;
+    private final UserService userService;
+
+    public OrderServiceImpl(OrderMapper orderMapper,
+                            ProductService productService,
+                            UserService userService) {
+        this.orderMapper = orderMapper;
+        this.productService = productService;
+        this.userService = userService;
+    }
+}
+
+// 错误示例 ✗ - 字段注入
+@Service
+public class OrderServiceImpl implements OrderService {
+
+    @Autowired
+    private OrderMapper orderMapper;  // 字段注入，不利于测试
+}
+
+// 错误示例 ✗ - Setter注入
+@Service
+public class OrderServiceImpl implements OrderService {
+
+    private OrderMapper orderMapper;
+
+    @Autowired
+    public void setOrderMapper(OrderMapper orderMapper) {
+        this.orderMapper = orderMapper;  // Setter注入，依赖可能不完整
+    }
+}
+```
+
+MUST 5.1.02 Lombok推荐使用
+```java
+// 推荐 ✓
+@Service
+@RequiredArgsConstructor // Lombok生成构造器
+public class OrderServiceImpl implements OrderService {
+    private final OrderMapper orderMapper;
+    private final ProductService productService;
+}
+```
+
+5.2 事务管理 | Transaction Management
+MUST 5.2.01 事务边界
+```java
+@Service
+public class OrderServiceImpl implements OrderService {
+
+    // 正确：新事务
+    @Transactional(propagation = Propagation.REQUIRES_NEW, timeout = 30)
+    public void createOrder(Order order) {
+        // ...
+    }
+
+    // 正确：只读事务
+    @Transactional(readOnly = true)
+    public Order getOrder(Long id) {
+        // ...
+    }
+
+    // 错误：过大的事务 ✗
+    @Transactional
+    public void processBigData() {
+        // 处理大量数据，可能导致锁超时
+    }
+}
+```
+
+MUST 5.2.02 事务传播行为
+```
+REQUIRED（默认）    - 加入当前事务，无事务则创建
+REQUIRES_NEW       - 创建新事务，挂起当前事务
+NESTED             - 嵌入当前事务
+SUPPORTS           - 支持当前事务，无事务则非事务执行
+NOT_SUPPORTED      - 非事务执行
+MANDATORY          - 必须在事务中执行
+NEVER              - 非事务执行，抛异常
+```
+
+================================================================================
+6. Mapper/DAO层规范（MUST）| Mapper/DAO Layer Standards
+================================================================================
+6.1 SQL规范 | SQL Standards
+MUST 6.1.01 禁止SELECT *
+```java
+// 正确示例 ✓
+@Select("SELECT id, username, email, status FROM t_user WHERE id = #{id}")
+UserDO selectById(@Param("id") Long id);
+
+// 错误示例 ✗
+@Select("SELECT * FROM t_user WHERE id = #{id}")
+UserDO selectById(@Param("id") Long id);
+```
+
+MUST 6.1.02 分页查询规范
+```java
+// 正确示例 ✓ - 使用PageHelper或IPage
+Page<UserDO> selectPage(Page<UserDO> page, @Param("keyword") String keyword);
+
+// XML
+<select id="selectPage" resultType="UserDO">
+    SELECT id, username, email, status
+    FROM t_user
+    <where>
+        <if test="keyword != null and keyword != ''">
+            AND username LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+    </where>
+    ORDER BY id DESC
+</select>
+```
+
+MUST 6.1.03 慢查询规范
+- 慢查询阈值：> 1秒
+- 必须添加索引
+- 必须监控告警
+- 验证方式：慢查询日志
+
+================================================================================
+7. DTO/VO/Entity规范（MUST）| DTO/VO/Entity Standards
+================================================================================
+7.1 对象转换 | Object Conversion
+MUST 7.1.01 使用MapStruct
+```java
+@Mapper(componentModel = "spring")
+public interface UserConverter {
+
+    UserDO toDO(CreateUserDTO dto);
+
+    UserVO toVO(UserDO userDO);
+
+    List<UserVO> toVOList(List<UserDO> users);
+}
+```
+
+MUST 7.1.02 对象层级
+```
+Entity  (DO)    - 数据库实体，与表一一对应
+DTO             - 数据传输对象，跨层传输
+VO              - 视图对象，返回给前端
+Command/Query   - 命令/查询对象，CQRS模式
+```
+
+================================================================================
+8. Spring Boot配置规范（MUST）| Spring Boot Config Standards
+================================================================================
+8.1 application.yml配置 | Application Configuration
+MUST 8.1.01 推荐配置模板
+```yaml
+spring:
+  application:
+    name: user-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/user_service?useSSL=false&serverTimezone=Asia/Shanghai}
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 600000
+      connection-timeout: 30000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    lettuce:
+      pool:
+        max-active: 50
+        max-idle: 20
+        min-idle: 5
+        max-wait: 3s
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        namespace: ${NACOS_NAMESPACE:}
+        group: DEFAULT_GROUP
+      config:
+        server-addr: ${NACOS_ADDR:localhost:8848}
+        file-extension: yml
+        namespace: ${NACOS_NAMESPACE:}
+        group: DEFAULT_GROUP
+        refresh-enabled: true
+
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_ADDR:localhost:8080}
+      eager: true
+      datasource:
+        flow:
+          nacos:
+            server-addr: ${NACOS_ADDR:localhost:8848}
+            data-id: ${spring.application.name}-flow-rules
+            group-id: SENTINEL_GROUP
+            rule-type: flow
+
+rocketmq:
+  name-server: ${ROCKETMQ_ADDR:localhost:9876}
+  producer:
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+    max-message-size: 4194304
+  consumer:
+    consume-timeout: 15
+    max-reconsume-times: 3
+    message-model: CLUSTERING
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: /api
+  tomcat:
+    threads:
+      max: 800
+      min-spare: 50
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    root: INFO
+    com.example.users: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId}] %logger{36} - %msg%n"
+  file:
+    name: logs/${spring.application.name}.log
+    max-size: 100MB
+    max-history: 30
+```
+
+8.2 多环境配置 | Multi-Environment Config
+MUST 8.2.01 环境隔离
+```
+config/
+├── application.yml           # 通用配置
+├── application-dev.yml        # 开发环境
+├── application-test.yml       # 测试环境
+├── application-staging.yml    # 预发环境
+└── application-prod.yml       # 生产环境
+```
+
+================================================================================
+9. 微服务架构规范（MUST）| Microservices Architecture Standards
+================================================================================
+9.1 服务拆分 | Service Decomposition
+MUST 9.1.01 拆分原则
+- 按业务领域拆分（DDD限界上下文）
+- 单一职责，高内聚低耦合
+- 独立部署，独立扩展
+- 验证方式：架构审查
+
+MUST 9.1.02 拆分粒度
+- 一个微服务对应一个业务领域能力
+- 避免微服务过细（分布式事务复杂度）
+- 避免微服务过粗（单体问题）
+- 验证方式：架构审查
+
+9.2 服务间通信 | Service Communication
+MUST 9.2.01 同步通信（OpenFeign）
+```java
+@FeignClient(
+    name = "order-service",
+    configuration = FeignConfig.class,
+    fallback = OrderClientFallback.class
+)
+public interface OrderClient {
+
+    @GetMapping("/api/orders/{id}")
+    Result<OrderVO> getOrder(@PathVariable("id") Long id);
+
+    @PostMapping("/api/orders")
+    Result<OrderVO> createOrder(@RequestBody CreateOrderDTO dto);
+}
+```
+
+MUST 9.2.02 异步通信（RocketMQ）
+```java
+@Component
+@RocketMQMessageListener(
+    topic = "order-topic",
+    consumerGroup = "order-created-group"
+)
+public class OrderCreatedConsumer implements RocketMQListener<OrderCreatedEvent> {
+
+    @Override
+    public void onMessage(OrderCreatedEvent event) {
+        // 处理订单创建事件
+    }
+}
+```
+
+9.3 服务注册与发现 | Service Registration & Discovery
+MUST 9.3.01 健康检查
+```java
+@Component
+public class OrderServiceHealthIndicator implements HealthIndicator {
+
+    @Override
+    public Health health() {
+        // 检查数据库连接
+        // 检查Redis连接
+        // 检查依赖服务
+        return Health.up()
+            .withDetail("database", "UP")
+            .withDetail("redis", "UP")
+            .build();
+    }
+}
+```
+
+9.4 分布式事务 | Distributed Transaction
+MUST 9.4.01 Saga模式（推荐）
+```java
+@Component
+public class OrderSagaOrchestrator {
+
+    public void execute(OrderSaga saga) {
+        // 1. 创建订单
+        saga.createOrder();
+
+        // 2. 扣减库存
+        saga.deductInventory();
+
+        // 3. 支付
+        saga.processPayment();
+
+        // 4. 完成
+        saga.complete();
+
+        // 补偿动作（按相反顺序执行）
+    }
+}
+```
+
+================================================================================
+10. 安全规范（MUST）| Security Standards
+================================================================================
+10.1 Spring Security配置 | Spring Security Config
+MUST 10.1.01 推荐配置
+```java
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf().disable()
+            .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and()
+            .authorizeRequests(auth -> auth
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/actuator/health").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/users/**").hasAnyRole("USER", "ADMIN")
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(authenticationEntryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
+            );
+
+        return http.build();
+    }
+}
+```
+
+10.2 JWT规范 | JWT Standards
+MUST 10.2.01 JWT格式
+```json
+{
+  "header": {
+    "alg": "RS256",
+    "typ": "JWT"
+  },
+  "payload": {
+    "sub": "user-id",
+    "name": "user-name",
+    "roles": ["USER", "ADMIN"],
+    "iat": 1234567890,
+    "exp": 1234567890
+  }
+}
+```
+
+MUST 10.2.02 JWT配置
+```yaml
+jwt:
+  secret: ${JWT_SECRET:your-secret-key-must-be-256-bits}
+  expiration: 86400  # 24小时
+  refresh-expiration: 604800  # 7天
+  issuer: user-service
+```
+
+================================================================================
+11. 数据库规范（MUST）| Database Standards
+================================================================================
+11.1 表设计 | Table Design
+MUST 11.1.01 命名规范
+```
+- 表名：小写字母+下划线，业务_表用途
+- 列名：小写字母+下划线
+- 布尔列：is_xxx，类型tinyint(1) unsigned
+- 主键：id，类型bigint unsigned
+- 时间戳：gmt_create/gmt_modified，类型datetime
+```
+
+MUST 11.1.02 索引规范
+```
+- 主键索引：pk_字段名
+- 唯一索引：uk_字段名
+- 普通索引：idx_字段名
+- 组合索引：idx_字段1_字段2_字段3
+```
+
+MUST 11.1.03 分页优化
+```sql
+-- 大偏移量优化
+SELECT a.*
+FROM t_order a
+INNER JOIN (
+    SELECT id FROM t_order
+    WHERE status = 1
+    ORDER BY id
+    LIMIT 10000, 20
+) b ON a.id = b.id;
+```
+
+================================================================================
+12. 缓存与分布式锁（MUST）| Cache & Distributed Lock
+================================================================================
+12.1 Redis缓存 | Redis Cache
+MUST 12.1.01 缓存策略
+```java
+// Cache-Aside模式
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+
+    private final UserMapper userMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private static final String CACHE_KEY_PREFIX = "user:";
+    private static final long CACHE_TTL = 3600;  // 1小时
+
+    @Cacheable(value = "users", key = "#id", unless = "#result == null")
+    public User getUserById(Long id) {
+        return userMapper.selectById(id);
+    }
+
+    @CacheEvict(value = "users", key = "#id")
+    public void updateUser(User user) {
+        userMapper.updateById(user);
+    }
+}
+```
+
+MUST 12.1.2 缓存雪崩/击穿/穿透防护
+```java
+// 缓存雪崩：TTL随机偏移
+@Cacheable(value = "users", key = "#id")
+public User getUserById(Long id) {
+    return userMapper.selectById(id);
+}
+
+// 缓存击穿：互斥锁
+public User getUncachedUser(Long id) {
+    String lockKey = "lock:user:" + id;
+    RLock lock = redissonClient.getLock(lockKey);
+
+    try {
+        if (lock.tryLock(3, 10, TimeUnit.SECONDS)) {
+            // 双重检查
+            User user = (User) redisTemplate.opsForValue().get("user:" + id);
+            if (user != null) {
+                return user;
+            }
+
+            user = userMapper.selectById(id);
+            if (user != null) {
+                redisTemplate.opsForValue().set("user:" + id, user, 1, TimeUnit.HOURS);
+            }
+            return user;
+        }
+    } finally {
+        lock.unlock();
+    }
+}
+
+// 缓存穿透：缓存空值
+public User getWithNullCache(Long id) {
+    String key = "user:" + id;
+    User user = (User) redisTemplate.opsForValue().get(key);
+
+    if (user != null) {
+        return user == NULL_OBJECT ? null : user;
+    }
+
+    user = userMapper.selectById(id);
+    if (user != null) {
+        redisTemplate.opsForValue().set(key, user, 1, TimeUnit.HOURS);
+    } else {
+        redisTemplate.opsForValue().set(key, NULL_OBJECT, 5, TimeUnit.MINUTES);
+    }
+
+    return user;
+}
+```
+
+12.2 Redisson分布式锁 | Redisson Distributed Lock
+MUST 12.2.01 锁使用规范
+```java
+@Service
+@RequiredArgsConstructor
+public class InventoryServiceImpl implements InventoryService {
+
+    private final RedissonClient redissonClient;
+
+    public boolean deductStock(Long productId, Integer quantity) {
+        String lockKey = "lock:inventory:" + productId;
+        RLock lock = redissonClient.getLock(lockKey);
+
+        try {
+            // 等待3秒，锁自动释放时间10秒
+            boolean acquired = lock.tryLock(3, 10, TimeUnit.SECONDS);
+            if (!acquired) {
+                throw new BusinessException("获取锁失败，请稍后重试");
+            }
+
+            // 执行扣减逻辑
+            return deductStockInternal(productId, quantity);
+
+        } finally {
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
+        }
+    }
+}
+```
+
+================================================================================
+13. 消息队列规范（MUST）| Message Queue Standards
+================================================================================
+13.1 RocketMQ规范 | RocketMQ Standards
+MUST 13.1.01 生产者配置
+```java
+@RestController
+@RequiredArgsConstructor
+public class OrderController {
+
+    private final RocketMQTemplate rocketMQTemplate;
+
+    @PostMapping("/orders")
+    public Result<OrderVO> createOrder(@RequestBody CreateOrderDTO dto) {
+        // 创建订单
+        Order order = orderService.createOrder(dto);
+
+        // 发送订单创建事件
+        OrderCreatedEvent event = new OrderCreatedEvent(order.getId(), dto.getUserId());
+        SendResult sendResult = rocketMQTemplate.syncSend("order-created-topic", event);
+
+        if (!sendResult.getSendStatus().equals(SendStatus.SEND_OK)) {
+            throw new BusinessException("消息发送失败");
+        }
+
+        return Result.success(OrderVO.of(order));
+    }
+}
+```
+
+MUST 13.1.02 消费者配置
+```java
+@Component
+@RocketMQMessageListener(
+    topic = "order-created-topic",
+    consumerGroup = "order-consumer-group",
+    consumeMode = ConsumeMode.ORDERLY,
+    maxReconsumeTimes = 3
+)
+public class OrderCreatedConsumer implements RocketMQListener<OrderCreatedEvent> {
+
+    @Override
+    public void onMessage(OrderCreatedEvent event) {
+        try {
+            // 幂等性检查
+            String idempotentKey = "order-created:" + event.getOrderId();
+            if (!redisTemplate.opsForValue().setIfAbsent(idempotentKey, "1", 24, TimeUnit.HOURS)) {
+                log.warn("重复消费，orderId={}", event.getOrderId());
+                return;
+            }
+
+            // 处理业务逻辑
+            processOrderCreated(event);
+
+        } catch (Exception e) {
+            log.error("处理订单创建事件失败", e);
+            throw e;  // 重试
+        }
+    }
+}
+```
+
+================================================================================
+14. 异常与错误码规范（MUST）| Exception & Error Code Standards
+================================================================================
+
+【企业标准参考】
+- Microsoft REST API Guidelines: RFC 7807 Problem Details for HTTP APIs
+- Salesforce Apex Exception Handling Best Practices
+- Oracle Java Exception Handling Patterns
+- Google Cloud Error Reporting Standards
+
+================================================================================
+14.1 核心原则（MUST）| Core Principles
+================================================================================
+
+MUST 14.1.01 枚举类强制使用原则
+```
+【强制要求】所有状态码和错误码必须使用枚举(Enum)类实现
+
+禁止使用：
+1. 魔法数字（如 return 1; return -1;）
+2. 字符串常量（如 public static final String SUCCESS = "200";）
+3. 整数常量接口（如 interface Code { int SUCCESS = 200; }）
+
+原因：
+- 枚举提供编译时类型安全
+- 枚举支持反向查询（code -> enum）
+- 枚举可携带额外信息（详细原因、解决建议）
+- IDE自动补全，减少拼写错误
+- 便于统一管理和重构
+```
+
+MUST 14.1.02 错误码枚举实现规范
+```java
+/**
+ * 统一错误码枚举
+ * 必须实现ErrorCodeProvider接口以支持统一处理
+ */
+public enum ErrorCodeEnum implements ErrorCodeProvider {
+
+    // ========== 枚举定义规范（MUST）==========
+    /**
+     * 操作成功.
+     * 包含四个属性：错误码、错误消息、详细原因、解决建议
+     */
+    SUCCESS(200, "操作成功", null, null),
+
+    /**
+     * 请求参数错误.
+     */
+    BAD_REQUEST(400, "请求参数错误",
+        "服务器无法理解请求的格式或内容",
+        "请检查请求参数格式和值是否正确"),
+
+    /**
+     * 未授权.
+     */
+    UNAUTHORIZED(401, "未授权",
+        "需要登录才能访问此资源",
+        "请先登录后再试"),
+
+    /**
+     * 资源不存在.
+     */
+    NOT_FOUND(404, "资源不存在",
+        "请求的资源已被删除或从未存在",
+        "请检查URL是否正确"),
+
+    /**
+     * 用户不存在.
+     */
+    USER_NOT_FOUND(44001, "用户不存在",
+        "系统中找不到该用户",
+        "请检查用户名是否正确"),
+
+    /**
+     * 订单不存在.
+     */
+    ORDER_NOT_FOUND(50001, "订单不存在",
+        "订单号无效或订单已被删除",
+        "请检查订单号是否正确，或在【我的订单】中查看"),
+
+    /**
+     * 商品库存不足.
+     */
+    STOCK_INSUFFICIENT(51006, "商品库存不足",
+        "商品库存不足，无法创建订单",
+        "请减少购买数量或选择其他商品");
+
+    // ========== 枚举属性规范（MUST）==========
+    /** 错误码数值 */
+    private final int code;
+
+    /** 错误描述信息 */
+    private final String message;
+
+    /** 详细错误原因（可为null） */
+    private final String detailedReason;
+
+    /** 用户建议（可为null） */
+    private final String suggestion;
+
+    // ========== 构造函数规范（MUST）==========
+    ErrorCodeEnum(int code, String message, String detailedReason, String suggestion) {
+        this.code = code;
+        this.message = message;
+        this.detailedReason = detailedReason;
+        this.suggestion = suggestion;
+    }
+
+    ErrorCodeEnum(int code, String message) {
+        this(code, message, null, null);
+    }
+
+    // ========== Getter方法规范（MUST）==========
+    @Override
+    public int getCode() {
+        return code;
+    }
+
+    @Override
+    public String getMessage() {
+        return message;
+    }
+
+    @Override
+    public String getDetailedReason() {
+        return detailedReason;
+    }
+
+    @Override
+    public String getSuggestion() {
+        return suggestion;
+    }
+
+    // ========== 工具方法规范（MUST）==========
+    /**
+     * 根据错误码数值查询对应的枚举实例
+     */
+    public static ErrorCodeEnum fromCode(int code) {
+        for (ErrorCodeEnum errorCode : values()) {
+            if (errorCode.getCode() == code) {
+                return errorCode;
+            }
+        }
+        return INTERNAL_ERROR;
+    }
+}
+```
+
+MUST 14.1.03 HTTP状态码枚举规范
+```java
+/**
+ * HTTP状态码枚举
+ * 统一管理所有HTTP响应状态码
+ */
+public enum HttpStatus {
+
+    // ========== 2xx 成功 ==========
+    OK(200, "OK", "请求成功"),
+    CREATED(201, "Created", "资源创建成功"),
+    ACCEPTED(202, "Accepted", "请求已接受，正在处理"),
+    NO_CONTENT(204, "No Content", "请求成功，无返回内容"),
+
+    // ========== 4xx 客户端错误 ==========
+    BAD_REQUEST(400, "Bad Request", "请求参数错误"),
+    UNAUTHORIZED(401, "Unauthorized", "未认证"),
+    FORBIDDEN(403, "Forbidden", "无权限访问"),
+    NOT_FOUND(404, "Not Found", "资源不存在"),
+    CONFLICT(409, "Conflict", "请求冲突"),
+    TOO_MANY_REQUESTS(429, "Too Many Requests", "请求过于频繁"),
+
+    // ========== 5xx 服务器错误 ==========
+    INTERNAL_SERVER_ERROR(500, "Internal Server Error", "服务器内部错误"),
+    SERVICE_UNAVAILABLE(503, "Service Unavailable", "服务暂不可用");
+
+    private final int code;
+    private final String reason;
+    private final String description;
+
+    HttpStatus(int code, String reason, String description) {
+        this.code = code;
+        this.reason = reason;
+        this.description = description;
+    }
+
+    public int getCode() { return code; }
+    public String getReason() { return reason; }
+    public String getDescription() { return description; }
+
+    /**
+     * 判断是否为成功状态码（2xx）
+     */
+    public boolean is2xxSuccessful() {
+        return code >= 200 && code < 300;
+    }
+
+    /**
+     * 根据数值获取枚举
+     */
+    public static HttpStatus valueOf(int code) {
+        for (HttpStatus status : values()) {
+            if (status.code == code) {
+                return status;
+            }
+        }
+        return INTERNAL_SERVER_ERROR;
+    }
+}
+```
+
+================================================================================
+14.2 业务异常类规范（MUST）| Business Exception Standards
+================================================================================
+
+MUST 14.2.01 业务异常基础类（使用枚举）
+```java
+/**
+ * 业务异常基类
+ * 所有业务异常必须继承此类
+ */
+public class BusinessException extends RuntimeException {
+
+    private static final long serialVersionUID = 1L;
+
+    /** 错误码（必须） */
+    private final int code;
+
+    /** 错误消息（必须） */
+    private final String message;
+
+    /** 详细错误原因（可选） */
+    private final String detailedReason;
+
+    /** 解决建议（可选） */
+    private final String suggestion;
+
+    /** 动态详情（可选，用于传递额外上下文） */
+    private final Map<String, Object> details;
+
+    // ========== 推荐构造函数：使用ErrorCodeEnum ==========
+    /**
+     * 使用错误码枚举构造（推荐）
+     */
+    public BusinessException(ErrorCodeEnum errorCode) {
+        super(errorCode.getMessage());
+        this.code = errorCode.getCode();
+        this.message = errorCode.getMessage();
+        this.detailedReason = errorCode.getDetailedReason();
+        this.suggestion = errorCode.getSuggestion();
+        this.details = null;
+    }
+
+    /**
+     * 使用错误码枚举和自定义消息
+     */
+    public BusinessException(ErrorCodeEnum errorCode, String customMessage) {
+        super(customMessage);
+        this.code = errorCode.getCode();
+        this.message = customMessage;
+        this.detailedReason = errorCode.getDetailedReason();
+        this.suggestion = errorCode.getSuggestion();
+        this.details = null;
+    }
+
+    /**
+     * 使用错误码枚举和原始异常（保留异常链）
+     */
+    public BusinessException(ErrorCodeEnum errorCode, Throwable cause) {
+        super(errorCode.getMessage(), cause);
+        this.code = errorCode.getCode();
+        this.message = errorCode.getMessage();
+        this.detailedReason = errorCode.getDetailedReason();
+        this.suggestion = errorCode.getSuggestion();
+        this.details = null;
+    }
+
+    /**
+     * 完整构造：错误码枚举 + 自定义消息 + 原始异常 + 动态详情
+     */
+    public BusinessException(ErrorCodeEnum errorCode, String customMessage,
+                            Throwable cause, Map<String, Object> details) {
+        super(customMessage, cause);
+        this.code = errorCode.getCode();
+        this.message = customMessage;
+        this.detailedReason = errorCode.getDetailedReason();
+        this.suggestion = errorCode.getSuggestion();
+        this.details = details != null ? new HashMap<>(details) : null;
+    }
+
+    // ========== 兼容构造函数：直接使用code和message ==========
+    public BusinessException(int code, String message) {
+        super(message);
+        this.code = code;
+        this.message = message;
+        this.detailedReason = null;
+        this.suggestion = null;
+        this.details = null;
+    }
+
+    public BusinessException(int code, String message, Throwable cause) {
+        super(message, cause);
+        this.code = code;
+        this.message = message;
+        this.detailedReason = null;
+        this.suggestion = null;
+        this.details = null;
+    }
+
+    // ========== Getter方法 ==========
+    public int getCode() { return code; }
+    @Override public String getMessage() { return message; }
+    public String getDetailedReason() { return detailedReason; }
+    public String getSuggestion() { return suggestion; }
+    public Map<String, Object> getDetails() {
+        return details != null ? new HashMap<>(details) : null;
+    }
+
+    public String getFullMessage() {
+        return "[" + code + "] " + message;
+    }
+}
+```
+
+MUST 14.2.02 异常使用规范
+```java
+@Service
+@RequiredArgsConstructor
+public class OrderServiceImpl implements OrderService {
+
+    private final OrderMapper orderMapper;
+
+    // ========== 正确示例1：直接抛出枚举异常 ==========
+    public Order getOrderById(Long orderId) {
+        return orderMapper.selectById(orderId)
+            .orElseThrow(() -> new BusinessException(ErrorCodeEnum.ORDER_NOT_FOUND));
+    }
+
+    // ========== 正确示例2：带自定义消息 ==========
+    public void cancelOrder(Long orderId, Long userId) {
+        Order order = orderMapper.selectById(orderId)
+            .orElseThrow(() -> new BusinessException(ErrorCodeEnum.ORDER_NOT_FOUND,
+                "订单 " + orderId + " 不存在"));
+
+        if (!order.getUserId().equals(userId)) {
+            throw new BusinessException(ErrorCodeEnum.PERMISSION_DENIED,
+                "您无权取消此订单");
+        }
+    }
+
+    // ========== 正确示例3：保留原始异常链 ==========
+    public void updateOrderStatus(Long orderId, OrderStatus status) {
+        try {
+            orderMapper.updateStatus(orderId, status);
+        } catch (DataAccessException e) {
+            // 使用异常链，保留原始异常用于问题排查
+            throw new BusinessException(
+                ErrorCodeEnum.DATABASE_ERROR,
+                "更新订单状态失败",
+                e  // 重要：保留原始异常
+            );
+        }
+    }
+}
+```
+
+================================================================================
+14.3 异常工具类规范（MUST）| Exception Utility Standards
+================================================================================
+
+MUST 14.3.01 异常转换工具类
+```java
+/**
+ * 异常处理工具类
+ * 提供统一的异常转换和处理方法
+ */
+public final class ExceptionUtils {
+
+    private ExceptionUtils() {}
+
+    /**
+     * 将底层异常转换为业务异常（保留异常链）
+     */
+    public static BusinessException wrapBusinessException(
+            ErrorCodeEnum errorCode, Throwable cause) {
+        return new BusinessException(errorCode, cause.getMessage(), cause);
+    }
+
+    /**
+     * 将SQL异常转换为业务异常
+     * 根据SQLState判断具体错误类型
+     */
+    public static BusinessException fromSqlException(SQLException e) {
+        String state = e.getSQLState();
+
+        // 主键冲突
+        if ("23000".equals(state) || e.getErrorCode() == 1062) {
+            return new BusinessException(
+                ErrorCodeEnum.DATABASE_DUPLICATE_KEY,
+                "数据已存在，请勿重复添加",
+                e
+            );
+        }
+
+        // 连接失败
+        if ("08001".equals(state)) {
+            return new BusinessException(
+                ErrorCodeEnum.DATABASE_ERROR,
+                "数据库连接失败",
+                e
+            );
+        }
+
+        // 默认数据库错误
+        return new BusinessException(
+            ErrorCodeEnum.DATABASE_ERROR,
+            "数据库操作失败",
+            e
+        );
+    }
+
+    /**
+     * 获取异常的根本原因
+     * 遍历异常链找到最底层的cause
+     */
+    public static Throwable getRootCause(Throwable throwable) {
+        Throwable cause = throwable;
+        while (cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        return cause;
+    }
+
+    /**
+     * 判断异常是否由指定类型导致
+     */
+    public static boolean isCausedBy(Throwable throwable, Class<?> causeType) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (causeType.isInstance(current)) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+}
+```
+
+MUST 14.3.02 异常断言工具类
+```java
+/**
+ * 业务异常断言工具类
+ * 提供类似Assert的异常抛出方法
+ */
+public final class BusinessExceptionAssert {
+
+    private BusinessExceptionAssert() {}
+
+    /**
+     * 断言对象非空
+     */
+    public static <T> T notNull(T object, ErrorCodeEnum errorCode) {
+        if (object == null) {
+            throw new BusinessException(errorCode);
+        }
+        return object;
+    }
+
+    /**
+     * 断言对象非空，带自定义消息
+     */
+    public static <T> T notNull(T object, ErrorCodeEnum errorCode, String message) {
+        if (object == null) {
+            throw new BusinessException(errorCode, message);
+        }
+        return object;
+    }
+
+    /**
+     * 断言布尔条件为true
+     */
+    public static void isTrue(boolean condition, ErrorCodeEnum errorCode) {
+        if (!condition) {
+            throw new BusinessException(errorCode);
+        }
+    }
+
+    /**
+     * 断言集合非空
+     */
+    public static <T extends Collection<?>> T notEmpty(T collection, ErrorCodeEnum errorCode) {
+        if (collection == null || collection.isEmpty()) {
+            throw new BusinessException(errorCode);
+        }
+        return collection;
+    }
+
+    /**
+     * 断言字符串非空
+     */
+    public static String notBlank(String str, ErrorCodeEnum errorCode) {
+        if (str == null || str.trim().isEmpty()) {
+            throw new BusinessException(errorCode);
+        }
+        return str;
+    }
+
+    /**
+     * 断言正数
+     */
+    public static int positive(int value, ErrorCodeEnum errorCode) {
+        if (value <= 0) {
+            throw new BusinessException(errorCode);
+        }
+        return value;
+    }
+
+    /**
+     * 断言对象状态
+     */
+    public static void state(boolean condition, ErrorCodeEnum errorCode) {
+        if (!condition) {
+            throw new BusinessException(errorCode);
+        }
+    }
+}
+```
+
+MUST 14.3.03 工具类使用示例
+```java
+@Service
+@RequiredArgsConstructor
+public class ProductServiceImpl implements ProductService {
+
+    private final ProductMapper productMapper;
+
+    // ========== 使用异常断言工具 ==========
+    public Product getProduct(Long id) {
+        // 使用断言工具简化代码
+        return BusinessExceptionAssert.notNull(
+            productMapper.selectById(id),
+            ErrorCodeEnum.PRODUCT_NOT_FOUND,
+            "商品 " + id + " 不存在"
+        );
+    }
+
+    public void updateStock(Long productId, int quantity) {
+        // 使用正数断言
+        BusinessExceptionAssert.positive(
+            quantity,
+            ErrorCodeEnum.INVALID_QUANTITY
+        );
+
+        // 使用状态断言
+        Product product = getProduct(productId);
+        BusinessExceptionAssert.state(
+            product.getStock() >= quantity,
+            ErrorCodeEnum.STOCK_INSUFFICIENT
+        );
+
+        productMapper.updateStock(productId, quantity);
+    }
+
+    // ========== 使用异常转换工具 ==========
+    public void createProduct(Product product) {
+        try {
+            productMapper.insert(product);
+        } catch (DuplicateKeyException e) {
+            throw ExceptionUtils.wrapBusinessException(
+                ErrorCodeEnum.PRODUCT_ALREADY_EXISTS,
+                e
+            );
+        } catch (Exception e) {
+            throw ExceptionUtils.wrapBusinessException(
+                ErrorCodeEnum.DATABASE_ERROR,
+                e
+            );
+        }
+    }
+}
+```
+
+================================================================================
+14.4 全局异常处理规范（MUST）| Global Exception Handler Standards
+================================================================================
+
+MUST 14.4.01 全局异常处理器
+```java
+/**
+ * 全局异常处理器
+ * 统一处理所有异常并返回标准格式响应
+ */
+@RestControllerAdvice
+@Slf4j
+public class GlobalExceptionHandler {
+
+    /**
+     * 处理业务异常
+     */
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Result<Void>> handleBusinessException(
+            BusinessException ex, WebRequest request) {
+
+        log.warn("Business exception: [{}] {}",
+            ex.getCode(), ex.getMessage());
+
+        Result<Void> result = Result.error(ex.getCode(), ex.getMessage());
+        result.setDetailedReason(ex.getDetailedReason());
+        result.setSuggestion(ex.getSuggestion());
+        result.setTraceId(MDC.get("traceId"));
+
+        return ResponseEntity
+            .status(getHttpStatusFromErrorCode(ex.getCode()))
+            .body(result);
+    }
+
+    /**
+     * 处理参数校验异常
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Result<Void>> handleValidationException(
+            MethodArgumentNotValidException ex) {
+
+        String message = ex.getBindingResult().getFieldErrors().stream()
+            .map(FieldError::getDefaultMessage)
+            .collect(Collectors.joining("; "));
+
+        log.warn("Validation failed: {}", message);
+
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(Result.error(ErrorCodeEnum.BAD_REQUEST.getCode(), message));
+    }
+
+    /**
+     * 处理未知异常
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Result<Void>> handleUnhandledException(
+            Exception ex, WebRequest request) {
+
+        log.error("Unhandled exception", ex);
+
+        String errorId = UUID.randomUUID().toString();
+        MDC.put("errorId", errorId);
+
+        Result<Void> result = Result.error(ErrorCodeEnum.INTERNAL_ERROR);
+        result.setErrorId(errorId);
+        result.setTraceId(MDC.get("traceId"));
+
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(result);
+    }
+
+    /**
+     * 根据错误码获取HTTP状态码
+     */
+    private int getHttpStatusFromErrorCode(int errorCode) {
+        if (errorCode >= 200 && errorCode < 300) return 200;
+        if (errorCode >= 400 && errorCode < 500) return errorCode;
+        return 500;
+    }
+}
+```
+
+================================================================================
+14.5 错误码分段规范（MUST）| Error Code Segmentation Standards
+================================================================================
+
+MUST 14.5.01 错误码分段规则
+```
+错误码格式：5位数字，前2位表示模块，后3位表示具体错误
+
+========= HTTP标准错误码 ==========
+200      操作成功
+400      请求参数错误
+401      未授权
+403      无权限
+404      资源不存在
+409      请求冲突
+429      请求过于频繁
+500      服务器内部错误
+503      服务不可用
+
+========= 注册相关 10001-10026 ==========
+10001    注册参数无效
+10002    邮箱格式不正确
+10009    用户名已存在
+10010    邮箱已被注册
+
+========= 登录认证 40001-40010 ==========
+40001    用户未登录
+40002    登录已过期
+40004    用户名或密码错误
+40005    账号已被禁用
+
+========= 权限控制 41001-41007 ==========
+41001    权限不足
+41002    缺少必需权限
+41003    角色不足
+
+========= 订单业务 50001-59001 ==========
+50001    订单不存在
+50002    订单参数无效
+50003    订单状态错误
+51006    商品库存不足
+52003    支付失败
+
+========= 数据库 20001-20003 ==========
+20001    数据库操作失败
+20002    数据已存在（唯一约束冲突）
+20003    数据不存在
+
+========= 外部服务 30001-30003 ==========
+30001    邮件服务异常
+30002    短信服务异常
+30003    Redis缓存异常
+```
+
+================================================================================
+14.6 异常处理最佳实践（MUST）| Exception Handling Best Practices
+================================================================================
+
+MUST 14.6.01 异常处理DO's and DON'T's
+```java
+// ========== ✓ 正确做法 ==========
+
+// DO 1: 使用枚举定义错误码
+throw new BusinessException(ErrorCodeEnum.USER_NOT_FOUND);
+
+// DO 2: 保留原始异常链
+try {
+    // ...
+} catch (SQLException e) {
+    throw new BusinessException(ErrorCodeEnum.DATABASE_ERROR, e);
+}
+
+// DO 3: 提供有意义的错误信息
+throw new BusinessException(
+    ErrorCodeEnum.ORDER_NOT_FOUND,
+    String.format("订单 %s 不存在", orderId)
+);
+
+// DO 4: 使用工具类简化代码
+return BusinessExceptionAssert.notNull(
+    userMapper.selectById(userId),
+    ErrorCodeEnum.USER_NOT_FOUND
+);
+
+// ========== ✗ 错误做法 ==========
+
+// DON'T 1: 使用魔法数字
+return -1;  // ✗ 错误！
+
+// DON'T 2: 吞掉异常
+try {
+    // ...
+} catch (Exception e) {
+    // ✗ 什么都不做！
+}
+
+// DON'T 3: 捕获但立即重新抛出
+try {
+    // ...
+} catch (Exception e) {
+    throw e;  // ✗ 毫无意义
+}
+
+// DON'T 4: 捕获过泛的异常
+try {
+    // ...
+} catch (Exception e) {  // ✗ 应该捕获具体异常类型
+    // ...
+}
+```
+
+MUST 14.6.02 异常日志记录规范
+```java
+@Slf4j
+@Service
+public class OrderServiceImpl {
+
+    public void processOrder(Long orderId) {
+        try {
+            // 业务逻辑
+        } catch (BusinessException e) {
+            // 业务异常：WARN级别
+            log.warn("Order processing failed: [{}] {}",
+                e.getCode(), e.getMessage());
+            throw e;
+        } catch (DataAccessException e) {
+            // 数据访问异常：ERROR级别，记录堆栈
+            log.error("Database error while processing order {}: {}",
+                orderId, e.getMessage(), e);
+            throw new BusinessException(
+                ErrorCodeEnum.DATABASE_ERROR,
+                "订单处理失败",
+                e
+            );
+        } catch (Exception e) {
+            // 未知异常：ERROR级别，记录完整堆栈
+            log.error("Unexpected error while processing order {}", orderId, e);
+            throw new BusinessException(
+                ErrorCodeEnum.INTERNAL_ERROR,
+                e
+            );
+        }
+    }
+}
+```
+
+================================================================================
+15. 可观测性规范（MUST）| Observability Standards
+================================================================================
+15.1 分布式追踪 | Distributed Tracing
+MUST 15.1.01 链路追踪配置
+```yaml
+spring:
+  sleuth:
+    zipkin:
+      base-url: ${ZIPKIN_URL:http://localhost:9411}
+    sampler:
+      probability: 1.0  # 生产环境使用0.1
+```
+
+MUST 15.1.02 TraceId传递
+```java
+@Component
+public class TraceIdFilter implements Filter {
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) {
+        String traceId = request.getHeader("X-Trace-Id");
+        if (traceId == null || traceId.isEmpty()) {
+            traceId = UUID.randomUUID().toString().replace("-", "");
+        }
+        MDC.put("traceId", traceId);
+
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            MDC.remove("traceId");
+        }
+    }
+}
+```
+
+15.2 Micrometer指标 | Micrometer Metrics
+MUST 15.2.1 自定义指标
+```java
+@Component
+@RequiredArgsConstructor
+public class OrderMetrics {
+
+    private final MeterRegistry meterRegistry;
+
+    public void recordOrderCreated(String type) {
+        Counter.builder("order.created")
+            .tag("type", type)
+            .register(meterRegistry)
+            .increment();
+    }
+
+    public void recordOrderPayment(String status, long amount) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        sample.stop(Timer.builder("order.payment")
+            .tag("status", status)
+            .register(meterRegistry));
+
+        Gauge.builder("order.payment.amount")
+            .tag("status", status)
+            .register(meterRegistry)
+            .increment(amount);
+    }
+}
+```
+
+15.3 日志规范 | Logging Standards
+MUST 15.3.1 结构化日志
+```java
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class OrderServiceImpl {
+
+    public Order createOrder(CreateOrderCmd cmd) {
+        MDC.put("traceId", UUID.randomUUID().toString());
+
+        try {
+            log.info("创建订单开始, userId={}, productId={}, quantity={}",
+                    cmd.getUserId(), cmd.getProductId(), cmd.getQuantity());
+
+            Order order = buildOrder(cmd);
+            orderMapper.insert(order);
+
+            log.info("创建订单成功, orderId={}", order.getId());
+            return order;
+
+        } finally {
+            MDC.remove("traceId");
+        }
+    }
+}
+```
+
+================================================================================
+16. 测试规范（MUST）| Testing Standards
+================================================================================
+16.1 单元测试 | Unit Testing
+MUST 16.1.1 JUnit 5 + Mockito
+```java
+@ExtendWith(MockitoExtension.class)
+class OrderServiceImplTest {
+
+    @Mock
+    private OrderMapper orderMapper;
+
+    @Mock
+    private ProductService productService;
+
+    @InjectMocks
+    private OrderServiceImpl orderService;
+
+    @Test
+    @DisplayName("创建订单 - 成功")
+    void createOrder_Success() {
+        // Given
+        CreateOrderCmd cmd = CreateOrderCmd.builder()
+            .userId(1L)
+            .productId(100L)
+            .quantity(2)
+            .build();
+
+        when(productService.deductStock(anyLong(), anyInt())).thenReturn(true);
+        when(orderMapper.insert(any())).thenReturn(1);
+
+        // When
+        Order order = orderService.createOrder(cmd);
+
+        // Then
+        assertThat(order).isNotNull();
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
+        verify(productService).deductStock(100L, 2);
+        verify(orderMapper).insert(any(Order.class));
+    }
+
+    @Test
+    @DisplayName("创建订单 - 库存不足抛出异常")
+    void createOrder_StockInsufficient_ThrowsException() {
+        // Given
+        CreateOrderCmd cmd = CreateOrderCmd.builder()
+            .userId(1L
+            .productId(100L)
+            .quantity(999)
+            .build();
+
+        when(productService.deductStock(anyLong(), anyInt()))
+            .thenThrow(new BusinessException(ErrorCode.STOCK_INSUFFICIENT));
+
+        // When & Then
+        assertThatThrownBy(() -> orderService.createOrder(cmd))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("库存不足");
+    }
+}
+```
+
+MUST 16.1.2 测试覆盖率
+```
+语句覆盖率 >= 80%
+分支覆盖率 >= 70%
+核心模块覆盖率 >= 90%
+```
+
+16.2 集成测试 | Integration Testing
+MUST 16.2.1 @SpringBootTest
+```java
+@SpringBootTest
+@AutoConfigureMockDatabase(replace = AutoConfigureMockDatabase.Replace.NONE)
+@Testcontainers
+class OrderIntegrationTest {
+
+    @Container
+    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
+        .withDatabaseName("test_db")
+        .withUsername("root")
+        .withPassword("password");
+
+    @Autowired
+    private OrderController orderController;
+
+    @Test
+    @DisplayName("创建订单 - 集成测试")
+    void createOrder_Integration() {
+        // Given
+        CreateOrderDTO dto = new CreateOrderDTO();
+        dto.setUserId(1L);
+        dto.setProductId(100L);
+        dto.setQuantity(1);
+
+        // When
+        ResponseEntity<Result<OrderVO>> response = orderController.createOrder(dto);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody().getCode()).isEqualTo(200);
+        assertThat(response.getBody().getData()).isNotNull();
+    }
+}
+```
+
+16.3 端到端测试 | E2E Testing
+MUST 16.3.1 Testcontainers
+```java
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@Testcontainers
+class OrderE2ETest {
+
+    @Container
+    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.33")
+        .withDatabaseName("test")
+        .withUsername("root")
+        .withPassword("test");
+
+    @LocalServerPort
+    private int port;
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Test
+    @DisplayName("创建订单 - E2E测试")
+    void createOrder_E2E() {
+        // Given
+        String url = "http://localhost:" + port + "/api/orders";
+        CreateOrderDTO dto = new CreateOrderDTO();
+        dto.setUserId(1L);
+        dto.setProductId(100L);
+        dto.setQuantity(1);
+
+        // When
+        ResponseEntity<Result> response = restTemplate.postForEntity(url, dto, Result.class);
+
+        // Then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+}
+```
+
+================================================================================
+17. CI/CD与部署规范（MUST）| CI/CD & Deployment Standards
+================================================================================
+17.1 Git工作流 | Git Workflow
+MUST 17.1.01 分支策略
+```
+main      - 生产分支，受保护
+develop   - 开发分支
+feature/* - 功能分支
+hotfix/*  - 紧急修复分支
+release/* - 发布分支
+```
+
+MUST 17.1.2 Commit规范
+```
+格式：<type>(<scope>): <subject>
+
+type:
+  feat     - 新功能
+  fix      - Bug修复
+  docs     - 文档更新
+  style    - 代码格式
+  refactor - 重构
+  test     - 测试
+  chore    - 构建/工具
+
+示例:
+feat(order): 添加订单创建接口
+fix(payment): 修复支付超时问题
+docs: 更新README文档
+```
+
+17.2 CI流水线 | CI Pipeline
+MUST 17.2.1 GitHub Actions配置
+```yaml
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2-
+
+      - name: Run Checkstyle
+        run: mvn checkstyle:check
+
+      - name: Run SpotBugs
+        run: mvn spotbugs:check
+
+      - name: Run unit tests
+        run: mvn test
+
+      - name: Generate test report
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Maven Tests
+          path: target/surefire-reports/*.xml
+```
+
+17.3 质量门禁 | Quality Gate
+MUST 17.3.1 SonarQube配置
+```yaml
+# sonar-project.properties
+sonar.projectKey=my-project:backend
+sonar.qualitygate.wait=true
+sonar.qualitygate.timeout=300
+
+# 代码质量阈值
+sonar.coverage=80
+sonar.coverage.line=80
+sonar.coverage.branch=70
+sonar.duplication.density=0.8
+sonar.cpd.crossproject=false
+
+# 规则
+sonar.java.checkstyle.ignore=false
+sonar.java.pmd.rule.java
+```
+
+17.4 部署策略 | Deployment Strategy
+MUST 17.4.1 蓝绿部署
+```
+1. 部署新版本到蓝环境
+2. 验证新版本健康
+3. 切换流量到蓝环境
+4. 绿环境待命
+```
+
+MUST 17.4.2 金丝雀发布
+```
+1. 部署新版本到金丝雀环境
+2. 对部分用户（如5%）开放
+3. 验证新版本稳定性
+4. 逐步扩大范围
+5. 全量发布
+```
+
+================================================================================
+18. 性能与调优规范（MUST）| Performance & Tuning Standards
+================================================================================
+18.1 JVM调优 | JVM Tuning
+MUST 18.1.1 推荐JVM参数
+```bash
+# 生产环境推荐参数
+JAVA_OPTS="
+-Xms4g -Xmx4g                          # 堆内存相同大小，避免动态调整
+-XX:MetaspaceSize=256m                  # 元空间大小
+-XX:MaxMetaspaceSize=512m               # 最大元空间
+-XX:+UseG1GC                           # 使用G1垃圾收集器
+-XX:MaxGCPauseMillis=200               # 最大GC停顿时间
+-XX:+HeapDumpOnOutOfMemoryError        # OOM时生成Dump
+-XX:HeapDumpPath=/logs/heap_dump.hprof  # Dump文件路径
+-XX:+PrintGCDetails                     # 打印GC详情
+-XX:+PrintGCTimeStamps                 # 打印GC时间戳
+-Xloggc:/logs/gc.log                   # GC日志文件
+-XX:+UseGCLogFileRotation             # GC日志轮转
+-XX:NumberOfGCLogFiles=10              # 保留GC日志文件数
+-XX:GCLogFileSize=10M                    # 单个GC日志文件大小
+-Djava.awt.headless=true                 # 无头模式
+-Dfile.encoding=UTF-8                   # 文件编码
+-Duser.timezone=Asia/Shanghai            # 时区
+"
+```
+
+MUST 18.1.2 线程池配置
+```yaml
+spring:
+  task:
+    execution:
+      pool:
+        core-size: 8
+        max-size: 16
+        queue-capacity: 1000
+        keep-alive: 60s
+        thread-name-prefix: async-
+```
+
+18.2 数据库性能优化 | Database Performance
+MUST 18.2.1 连接池配置（HikariCP）
+```yaml
+spring:
+  datasource:
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 50
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+      validation-timeout: 5000
+      leak-detection-threshold: 60000
+```
+
+MUST 18.2.2 索引优化建议
+```
+- WHERE/ORDER BY/GROUP BY 列必须建索引
+- 组合索引遵循最左前缀原则
+- 避免在索引列上进行计算
+- 避免隐式类型转换
+- 避免前缀模糊查询
+```
+
+================================================================================
+19. 文档规范（MUST）| Documentation Standards
+================================================================================
+19.1 OpenAPI规范 | OpenAPI Standards
+MUST 19.1.1 Swagger配置
+```java
+@Configuration
+@OpenAPIDefinition(info = @Info(
+        title = "用户服务API",
+        version = "v1.0",
+        description = "用户服务接口文档"
+))
+public class OpenApiConfig {
+
+    @Bean
+    public OpenAPI customOpenAPI() {
+        return new OpenAPI()
+            .components(new Components()
+                .addSecuritySchemes(new SecurityScheme()
+                    .name("bearerAuth")
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("bearer")
+                    .bearerFormat("JWT")))
+            .addSecurityItem(new SecurityRequirement().addList("bearerAuth"));
+    }
+}
+```
+
+MUST 19.1.2 API注解
+```java
+@RestController
+@RequestMapping("/api/users")
+@Tag(name = "用户管理", description = "用户管理接口")
+public class UserController {
+
+    @Operation(summary = "获取用户详情", description = "根据ID获取用户详细信息")
+    @Parameter(name = "id", description = "用户ID", required = true, example = "1")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "成功"),
+        @ApiResponse(responseCode = "404", description = "用户不存在"),
+        @ApiResponse(responseCode = "500", description = "服务器错误")
+    })
+    @GetMapping("/{id}")
+    public Result<UserVO> getUser(@PathVariable Long id) {
+        // ...
+    }
+}
+```
+
+19.2 README规范 | README Standards
+MUST 19.2.1 README内容
+```
+# 项目名称
+
+## 项目简介
+- 项目描述
+- 技术栈
+- 项目结构
+
+## 快速开始
+- 环境要求
+- 安装步骤
+- 运行命令
+
+## API文档
+- Swagger地址
+- 接口说明
+
+## 开发指南
+- 环境配置
+- 代码规范
+- 提交规范
+
+## 部署指南
+- 构建命令
+- 部署步骤
+
+## 常见问题
+```
+
+================================================================================
+20. 附录：配置示例与参考资源 | Appendix
+================================================================================
+20.1 完整配置示例 | Full Configuration Examples
+
+20.1.1 pom.xml
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.1.2</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.example</groupId>
+    <artifactId>user-service</artifactId>
+    <version>1.0.0</version>
+    <name>user-service</name>
+    <description>User Service</description>
+
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <spring-cloud.version>2022.0.3</spring-cloud.version>
+        <spring-cloud-alibaba.version>2022.0.0.0-RC2</spring-cloud-alibaba.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
+                <version>${spring-cloud-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- Spring Boot Starters -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Cloud -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-openfeign</artifactId>
+        </dependency>
+
+        <!-- Spring Cloud Alibaba -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+
+        <!-- Persistence -->
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Redis -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- RocketMQ -->
+        <dependency>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- Observability -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-brave</artifactId>
+        </dependency>
+
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- MapStruct -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!-- Validation -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>mysql</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+```
+
+20.1.2 logback-spring.xml
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <springProperty scope="context" name="activeProfile" source="spring.profiles.active" defaultValue="dev"/>
+
+    <property name="LOG_PATH" value="logs"/>
+    <property name="APP_NAME" value="user-service"/>
+
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/${APP_NAME}.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/${APP_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>100MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{traceId:-}] %logger{36} - %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- 异步日志 -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+    </appender>
+
+    <!-- 日志级别 -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_FILE"/>
+    </root>
+
+    <!-- 特定日志级别 -->
+    <logger name="com.example.users" level="DEBUG"/>
+    <logger name="org.springframework.web" level="INFO"/>
+    <logger name="org.hibernate.SQL" level="WARN"/>
+
+    <!-- 开发环境 -->
+    <springProfile name="dev">
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC_FILE"/>
+        </root>
+    </springProfile>
+
+    <!-- 生产环境 -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="ASYNC_FILE"/>
+        </root>
+        <logger name="com.example.users" level="INFO"/>
+    </springProfile>
+</configuration>
+```
+
+20.1.3 Dockerfile
+```dockerfile
+FROM openjdk:17-jdk-slim
+
+LABEL maintainer="backend-team@example.com"
+
+WORKDIR /app
+
+# 复制Maven配置文件
+COPY pom.xml .
+COPY mvnw .
+
+# 复制源码
+COPY src ./src
+
+# 构建应用
+RUN mvn clean package -DskipTests -Dmaven.test.skip=true
+
+# 运行时参数
+ENV JAVA_OPTS=""
+ENV SERVER_PORT=8080
+
+# 暴露端口
+EXPOSE 8080
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=3s \
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
+
+# 启动应用
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]
+```
+
+20.1.4 docker-compose.yml
+```yaml
+version: '3.8'
+
+services:
+  user-service:
+    build: .
+    container_name: user-service
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - DB_URL=jdbc:mysql://mysql:3306/user_service?useSSL=false&serverTimezone=Asia/Shanghai
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - NACOS_ADDR=nacos:8848
+      - SENTINEL_ADDR=sentinel:8080
+      - ROCKETMQ_ADDR=rocketmq-nameserver:9876
+    depends_on:
+      - mysql
+      - redis
+      - nacos
+      - rocketmq-nameserver
+    networks:
+      - microservice
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123456
+      - MYSQL_DATABASE=user_service
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - microservice
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - microservice
+    restart: unless-stopped
+
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: nacos
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      - MODE=standalone
+    volumes:
+      - nacos-data:/home/nacos/data
+    networks:
+      - microservice
+    restart: unless-stopped
+
+  sentinel:
+    image: bladex/sentinel-dashboard:1.8.6
+    container_name: sentinel
+    ports:
+      - "8080:8080"
+    networks:
+      - microservice
+    restart: unless-stopped
+
+  rocketmq-nameserver:
+    image: apache/rocketmq:5.1.4
+    container_name: rocketmq-nameserver
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    networks:
+      - microservice
+    restart: unless-stopped
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.1.4
+    container_name: rocketmq-broker
+    ports:
+      - "10911:10911"
+    environment:
+      - NAMESRV_ADDR=rocketmq-nameserver:9876
+    command: sh mqbroker -n rocketmq-nameserver:9876
+    depends_on:
+      - rocketmq-nameserver
+    networks:
+      - microservice
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  redis-data:
+  nacos-data:
+
+networks:
+  microservice:
+    driver: bridge
+```
+
+20.2 参考资源 | Reference Resources
+| 类型 | 名称 | 链接 |
+|------|------|------|
+| Java规范 | Google Java Style Guide | https://google.github.io/styleguide/javaguide.html |
+| Java规范 | Oracle Java Code Conventions | https://www.oracle.com/java/technologies/javase/codeconventions-Introduction.html |
+| Spring | Spring Framework Reference | https://docs.spring.io/spring-framework/reference/ |
+| Spring Boot | Spring Boot Best Practices | https://medium.com/javaguides/12-best-practices-every-spring-boot-developer-should-follow-4d678d0d5ed6 |
+| 微服务 | Microservices Patterns | https://microservices.io/patterns/ |
+| DDD | Domain-Driven Design | https://www.domainlanguage.com/ddd/ |
+| 测试 | JUnit 5 User Guide | https://junit.org/junit5/docs/current/user-guide/ |
+| 测试 | Mockito Documentation | https://javadoc.io/static/org/mockito/Mockito.html |
+| CI/CD | GitHub Actions | https://docs.github.com/en/actions |
+| 安全 | OWASP ASVS | https://owasp.org/www-project-application-security-verification-standard/ |
+| 安全 | Spring Security Reference | https://docs.spring.io/spring-security/reference/ |
+
+20.3 联系方式 | Contact Information
+| 角色 | 联系方式 |
+|------|----------|
+| 后端架构组 | 164112436@qq.com |
+| 基础设施团队 | 164112436@qq.com |
+| 安全团队 | 164112436@qq.com |
+
+20.4 相关文档 | Related Documents
+- 《工程治理与流程规范.txt》
+- 《中间件规范.txt》
+- 《前端规范.txt》
+- 公司架构评审流程
+- 应急响应手册
+
+================================================================================
+文档结束 | End of Document
+================================================================================

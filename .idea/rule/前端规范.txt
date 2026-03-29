@@ -1,0 +1,2583 @@
+# 前端工程规范 | Frontend Engineering Standards
+# 对标大厂最佳实践：SAP Fiori / Salesforce SLDS / Microsoft Fluent UI / Google Style Guide
+
+================================================================================
+文档元数据 | Document Metadata
+================================================================================
+版本号 | Version:        v2.0.1
+发布日期 | Release Date:  2025-01-15
+最后修订 | Last Revised: 2026-03-29
+生效日期 | Effective Date: 2025-01-15
+所有者 | Owner:         前端架构组
+维护者 | Maintainer:    前端基础设施团队
+评审人 | Reviewers:     前端TL / UI设计师 / QA组
+下次复审 | Next Review:   2026-01-15（年度复审）
+
+变更历史 | Change History:
+| 版本 | 日期       | 变更说明                           | 变更人 |
+|------|------------|-----------------------------------|--------|
+| v2.0 | 2025-01-15 | 完整重构：补充设计系统/TS/PWA/i18n  | 前端架构组 |
+| v1.0 | 2024-xx-xx | 初始版本                          | -      |
+
+引用标准 | Referenced Standards:
+- WCAG 2.1 Level AA（Web内容可访问性指南）
+- RFC 2119（MUST/SHOULD/MAY关键词定义）
+- Google TypeScript Style Guide
+- Airbnb JavaScript Style Guide
+- SAP Fiori Design Guidelines
+- Salesforce Lightning Design System
+- Microsoft Fluent UI Design System
+- Vue3官方文档最佳实践（Composition API / script setup）
+- WHATWG HTML标准
+- W3C CSS规范
+- ECMAScript 2024规范
+
+变更流程 | Change Process:
+1. 提案：提交RFC说明变更原因和影响范围
+2. 评审：前端架构委员会评审（至少2名LGTM）
+3. 公示：变更公示期7天，收集反馈
+4. 发布：更新版本号和变更历史
+5. 培训：重大变更需组织团队培训
+
+================================================================================
+0. 基本原则 | General Principles
+================================================================================
+0.1 规范分级说明 | Specification Levels
+- MUST（必须）：强制要求，违反将导致质量/安全/可维护性风险
+- SHOULD（应该）：强烈推荐，例外需审批和文档记录
+- MAY（可以）：可选建议，根据场景自行决定
+- MUST NOT（禁止）：严格禁止，违反将触发违规处理
+
+0.2 适用范围 | Scope
+- 适用于所有前端项目：Web应用/H5应用/小程序/桌面应用
+- 适用于所有技术栈：以Vue3为主（Composition API / script setup）
+- 适用于所有环境：开发/测试/预发/生产
+
+0.3 例外与豁免机制 | Exceptions & Waivers
+- 例外必须经前端架构组审批
+- 例外必须包含：原因/范围/风险/有效期/回滚方案/追踪编号
+- 例外到期必须复审或清理
+- 验证方式：例外审批记录/RFC
+
+0.4 违规处理 | Violation Handling
+- MUST级别违规：立即修复，并提交RCA
+- SHOULD级别违规：5个工作日内修复或申请例外
+- MAY级别违规：建议采纳，无强制要求
+- 验证方式：违规跟踪系统/代码审查
+
+0.5 术语表 | Glossary
+
+| 中文术语 | 英文术语 | 定义 |
+|----------|----------|------|
+| 代码审查 | Code Review | 对代码变更的系统性检查 |
+| 审查清单 | Review Checklist | 代码审查时需要检查的项目列表 |
+| 回滚 | Rollback | 将系统恢复到之前稳定版本 |
+| 组件 | Component | 可复用的UI单元，Vue3中使用单文件组件（SFC）定义，包含template/script/style |
+| Props | Properties | 父组件传递给子组件的数据 |
+| State | State | 组件内部的可变状态 |
+| Composable | Composable | Vue3组合式函数（Composition API），以use开头的函数，封装可复用的有状态逻辑 |
+| 设计令牌 | Design Token | 设计系统的变量（颜色/字体/间距等） |
+| 无障碍 | Accessibility (A11y) | 残障人士使用Web的能力 |
+| 响应式 | Responsive | 适应不同屏幕尺寸的设计 |
+| 渐进增强 | Progressive Enhancement | 基础功能可用，逐步增强体验 |
+| 优雅降级 | Graceful Degradation | 高级功能失效时保持基本可用 |
+| 代码分割 | Code Splitting | 将代码拆分为多个chunk按需加载 |
+| 懒加载 | Lazy Loading | 延迟加载非首屏资源 |
+
+================================================================================
+1. 设计系统规范（MUST）| Design System Standards
+================================================================================
+1.1 设计令牌（Design Tokens）
+MUST 1.1.01 令牌定义规范
+- 所有设计变量必须使用CSS自定义属性定义
+- 令牌命名格式：`--{category}-{name}-{variant}`
+
+```css
+/* 正确示例 ✓ */
+:root {
+  --color-primary-50: #e3f2fd;
+  --color-primary-500: #2196f3;
+  --color-primary-900: #0d47a1;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --font-size-sm: 12px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 18px;
+}
+
+/* 错误示例 ✗ */
+.button {
+  background: #2196f3;  /* 硬编码颜色 */
+  padding: 8px 16px;    /* 硬编码间距 */
+}
+```
+- 验证方式：Stylelint扫描/设计审查
+
+MUST 1.1.02 令牌使用规范
+- 禁止在组件中硬编码颜色/字体/间距
+- 必须引用设计令牌
+- 验证方式：CSS扫描/代码审查
+
+1.2 颜色规范 | Color Standards
+MUST 1.2.01 颜色系统
+- 必须定义主色/辅助色/语义色/中性色
+
+```css
+:root {
+  /* 主色（Primary）- 品牌色 */
+  --color-primary-50: #e3f2fd;
+  --color-primary-100: #bbdefb;
+  --color-primary-200: #90caf9;
+  --color-primary-300: #64b5f6;
+  --color-primary-400: #42a5f5;
+  --color-primary-500: #2196f3;  /* 主色 */
+  --color-primary-600: #1e88e5;
+  --color-primary-700: #1976d2;
+  --color-primary-800: #1565c0;
+  --color-primary-900: #0d47a1;
+
+  /* 辅助色（Secondary） */
+  --color-secondary-50: #f3e5f5;
+  --color-secondary-500: #9c27b0;
+  --color-secondary-900: #4a148c;
+
+  /* 语义色 */
+  --color-success-50: #e8f5e9;
+  --color-success-500: #4caf50;
+  --color-success-700: #2e7d32;
+
+  --color-warning-50: #fff8e1;
+  --color-warning-500: #ffc107;
+  --color-warning-700: #f57c00;
+
+  --color-error-50: #ffebee;
+  --color-error-500: #f44336;
+  --color-error-700: #c62828;
+
+  --color-info-50: #e3f2fd;
+  --color-info-500: #2196f3;
+  --color-info-700: #0277bd;
+
+  /* 中性色 */
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #eeeeee;
+  --color-gray-300: #e0e0e0;
+  --color-gray-400: #bdbdbd;
+  --color-gray-500: #9e9e9e;
+  --color-gray-600: #757575;
+  --color-gray-700: #616161;
+  --color-gray-800: #424242;
+  --color-gray-900: #212121;
+
+  /* 文本色 */
+  --color-text-primary: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-600);
+  --color-text-disabled: var(--color-gray-400);
+  --color-text-hint: var(--color-gray-500);
+
+  /* 背景色 */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: var(--color-gray-50);
+  --color-bg-tertiary: var(--color-gray-100);
+  --color-bg-overlay: rgba(0, 0, 0, 0.5);
+
+  /* 边框色 */
+  --color-border-light: var(--color-gray-200);
+  --color-border-default: var(--color-gray-300);
+  --color-border-dark: var(--color-gray-400);
+}
+```
+- 验证方式：设计令牌检查/对比度检查
+
+MUST 1.2.02 颜色对比度
+- 所有文本与背景的对比度必须满足WCAG AA标准
+- 正常文本：对比度 >= 4.5:1
+- 大文本（18pt+或14pt粗体+）：对比度 >= 3:1
+- 验证方式：axe DevTools/对比度检查工具
+
+1.3 字体规范 | Typography Standards
+MUST 1.3.01 字体家族
+```css
+:root {
+  /* 字体家族 */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+                       'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue',
+                       Helvetica, Arial, sans-serif;
+  --font-family-code: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono',
+                       'Courier New', monospace;
+  --font-family-number: 'SF Mono', 'Roboto Mono', monospace;  /* 数字专用字体 */
+}
+```
+- 验证方式：代码审查
+
+MUST 1.3.02 字号阶梯
+```css
+:root {
+  --font-size-xs: 10px;    /* 辅助说明 */
+  --font-size-sm: 12px;    /* 小字说明 */
+  --font-size-md: 14px;    /* 正文默认 */
+  --font-size-lg: 16px;    /* 重要文本 */
+  --font-size-xl: 18px;    /* 小标题 */
+  --font-size-2xl: 20px;   /* 标题 */
+  --font-size-3xl: 24px;   /* 大标题 */
+  --font-size-4xl: 30px;   /* 特大标题 */
+  --font-size-5xl: 36px;   /* 超大标题 */
+}
+```
+- 验证方式：设计审查
+
+MUST 1.3.03 字重规范
+```css
+:root {
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}
+```
+- 验证方式：代码审查
+
+MUST 1.3.04 行高规范
+```css
+:root {
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  --line-height-loose: 2;
+}
+```
+- 验证方式：设计审查
+
+1.4 间距规范 | Spacing Standards
+MUST 1.4.01 间距单位
+- 使用4px基准的8点网格系统
+```css
+:root {
+  --spacing-0: 0;
+  --spacing-1: 4px;    /* 0.25rem */
+  --spacing-2: 8px;    /* 0.5rem */
+  --spacing-3: 12px;   /* 0.75rem */
+  --spacing-4: 16px;   /* 1rem */
+  --spacing-5: 20px;   /* 1.25rem */
+  --spacing-6: 24px;   /* 1.5rem */
+  --spacing-8: 32px;   /* 2rem */
+  --spacing-10: 40px;  /* 2.5rem */
+  --spacing-12: 48px;  /* 3rem */
+  --spacing-16: 64px;  /* 4rem */
+  --spacing-20: 80px;  /* 5rem */
+  --spacing-24: 96px;  /* 6rem */
+}
+```
+- 验证方式：设计审查
+
+1.5 圆角规范 | Border Radius Standards
+MUST 1.5.01 圆角阶梯
+```css
+:root {
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;  /* 圆形 */
+}
+```
+- 验证方式：设计审查
+
+1.6 阴影规范 | Shadow Standards
+MUST 1.6.01 阴影阶梯
+```css
+:root {
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px rgba(0, 0, 0, 0.25);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+```
+- 验证方式：设计审查
+
+1.7 断点规范 | Breakpoint Standards
+MUST 1.7.01 响应式断点
+```css
+:root {
+  --breakpoint-xs: 320px;   /* 超小屏（竖屏手机） */
+  --breakpoint-sm: 640px;   /* 小屏（横屏手机） */
+  --breakpoint-md: 768px;   /* 中屏（平板竖屏） */
+  --breakpoint-lg: 1024px;  /* 大屏（平板横屏/笔记本） */
+  --breakpoint-xl: 1280px;  /* 超大屏（桌面） */
+  --breakpoint-2xl: 1536px; /* 2K屏幕 */
+}
+
+/* 媒体查询 */
+@media (min-width: 640px) { /* sm */ }
+@media (min-width: 768px) { /* md */ }
+@media (min-width: 1024px) { /* lg */ }
+@media (min-width: 1280px) { /* xl */ }
+```
+- 验证方式：响应式测试
+
+1.8 图标规范 | Icon Standards
+MUST 1.8.01 图标格式
+- 优先使用SVG图标
+- SVG图标必须内联或使用Sprite技术
+- 图标尺寸：16px/20px/24px/32px/48px
+- 验证方式：设计审查/代码审查
+
+```vue
+<!-- 正确示例 ✓ -->
+<script setup lang="ts">
+import IconUser from '@/components/icons/IconUser.vue'
+</script>
+
+<template>
+  <IconUser :size="24" class="text-primary" />
+
+  <!-- 或内联SVG -->
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path d="..." />
+  </svg>
+</template>
+```
+
+1.9 动效规范 | Animation Standards
+MUST 1.9.01 动效时长
+```css
+:root {
+  --duration-fast: 150ms;    /* 快速反馈（hover/focus） */
+  --duration-base: 200ms;    /* 基础动效 */
+  --duration-normal: 300ms;  /* 正常动效（过渡） */
+  --duration-slow: 500ms;    /* 慢速动效（页面切换） */
+}
+```
+- 验证方式：设计审查
+
+MUST 1.9.02 缓动函数
+```css
+:root {
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+```
+- 验证方式：设计审查
+
+MUST 1.9.03 动效使用原则
+- 禁止使用动效干扰用户操作
+- 必须支持`prefers-reduced-motion`减少动画偏好
+- 验证方式：代码审查
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+```
+
+================================================================================
+2. TypeScript规范（MUST）| TypeScript Standards
+================================================================================
+2.1 类型定义 | Type Definitions
+MUST 2.1.01 类型选择
+- 优先使用`interface`定义对象类型
+- 使用`type`定义联合类型/交叉类型
+- 禁止使用`any`，使用`unknown`代替
+- 验证方式：ESLint(@typescript-eslint/no-explicit-any)
+
+```typescript
+// 正确示例 ✓
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  age?: number;  // 可选属性
+}
+
+type Status = 'pending' | 'processing' | 'success' | 'error';
+
+type UserWithStatus = User & { status: Status };
+
+// 错误示例 ✗
+const data: any = fetchData();        // 禁止any
+const user: object = {};              // 类型过于宽泛
+type StringOrNumber = string | number; // 应使用更具体的类型
+```
+
+MUST 2.1.02 泛型使用
+- 复用组件必须使用泛型支持不同类型
+- 泛型命名：`T`（类型）、`K`（键）、`V`（值）、`P`（属性）
+- 验证方式：代码审查
+
+```typescript
+// 正确示例 ✓
+interface ApiResponse<T> {
+  code: number;
+  data: T;
+  message: string;
+}
+
+interface ListResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+// 使用
+type UserListResponse = ListResponse<User>;
+type OrderDetailResponse = ApiResponse<Order>;
+```
+
+MUST 2.1.03 枚举使用
+- 固定值集合必须使用枚举
+- 枚举命名：PascalCase
+- 验证方式：代码审查
+
+```typescript
+// 正确示例 ✓
+enum UserRole {
+  ADMIN = 'admin',
+  USER = 'user',
+  GUEST = 'guest',
+}
+
+enum OrderStatus {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
+// 常量枚举（编译时内联）
+const enum Environment {
+  Development = 'development',
+  Production = 'production',
+  Test = 'test',
+}
+```
+
+MUST 2.1.04 严格模式配置
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  }
+}
+```
+- 验证方式：TypeScript编译检查
+
+2.2 类型断言 | Type Assertions
+MUST 2.2.01 断言使用规范
+- 禁止使用`as any`双重断言
+- 优先使用类型守卫而非断言
+- 验证方式：ESLint(@typescript-eslint/no-unnecessary-type-assertion)
+
+```typescript
+// 正确示例 ✓
+// 类型守卫
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+function process(value: unknown) {
+  if (isString(value)) {
+    return value.toUpperCase();
+  }
+}
+
+// 错误示例 ✗
+const value = data as any as User;  // 双重断言
+const user = data as User;          // 未验证直接断言
+```
+
+2.3 模块与导入 | Modules & Imports
+MUST 2.3.01 导入顺序
+```typescript
+// 1. Vue核心模块
+import { ref, computed, onMounted } from 'vue'
+
+// 2. 第三方库
+import { ElButton, ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+
+// 3. 内部模块（绝对导入）
+import { UserService } from '@/services/user'
+import CustomButton from '@/components/ui/CustomButton.vue'
+
+// 4. 相对导入（同目录/子目录）
+import { utils } from './utils'
+import AppHeader from './AppHeader.vue'
+
+// 5. 类型导入（使用type关键字）
+import type { User } from '@/types'
+```
+- 验证方式：ESLint(import/order)
+
+MUST 2.3.02 路径别名
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/components/*": ["src/components/*"],
+      "@/services/*": ["src/services/*"],
+      "@/utils/*": ["src/utils/*"],
+      "@/hooks/*": ["src/hooks/*"],
+      "@/types/*": ["src/types/*"],
+      "@/assets/*": ["src/assets/*"],
+      "@/styles/*": ["src/styles/*"]
+    }
+  }
+}
+```
+- 验证方式：路径解析测试
+
+================================================================================
+3. Vue3组件规范（MUST）| Vue3 Component Standards
+================================================================================
+3.1 组件定义 | Component Definition
+MUST 3.1.01 组合式API优先
+- 新组件必须使用`<script setup lang="ts">`组合式API
+- 禁止使用Options API（特殊情况需审批）
+- 验证方式：代码审查
+
+```vue
+<!-- 正确示例 ✓ UserCard.vue -->
+<script setup lang="ts">
+import type { User } from '@/types'
+
+interface Props {
+  user: User
+  onSelect?: (id: string) => void
+}
+
+const props = defineProps<Props>()
+
+const handleClick = () => {
+  props.onSelect?.(props.user.id)
+}
+</script>
+
+<template>
+  <div class="user-card" @click="handleClick">
+    <img :src="user.avatar" :alt="user.name" />
+    <h3>{{ user.name }}</h3>
+  </div>
+</template>
+
+<!-- 错误示例 ✗ -->
+<!-- 禁止使用Options API -->
+<script>
+export default {
+  data() { return { ... } },
+  methods: { ... }
+}
+</script>
+```
+
+MUST 3.1.02 组件命名
+- 组件名必须使用PascalCase
+- 组件文件名与组件名一致
+- 验证方式：ESLint(vue/component-name-in-template-casing)
+
+```
+正确示例 ✓:
+UserCard.vue         -> <UserCard />
+UserProfile.vue      -> <UserProfile />
+DataTable.vue        -> <DataTable />
+
+错误示例 ✗:
+userCard.vue         -> 命名不规范
+User_List.vue        -> 应使用PascalCase
+index.vue            -> 导出时必须有明确名称
+```
+
+MUST 3.1.03 Props定义
+- 必须使用`defineProps`定义Props类型
+- 必须使用`defineEmits`定义事件类型
+- 验证方式：代码审查
+
+```vue
+<!-- 正确示例 ✓ CustomButton.vue -->
+<script setup lang="ts">
+interface Props {
+  variant?: 'primary' | 'secondary' | 'danger'
+  size?: 'small' | 'default' | 'large'
+  disabled?: boolean
+  loading?: boolean
+}
+
+interface Emits {
+  (e: 'click', event: MouseEvent): void
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  variant: 'primary',
+  size: 'default',
+  disabled: false,
+  loading: false,
+})
+
+const emit = defineEmits<Emits>()
+
+const handleClick = (event: MouseEvent) => {
+  if (!props.disabled && !props.loading) {
+    emit('click', event)
+  }
+}
+</script>
+
+<template>
+  <el-button
+    :type="variant"
+    :size="size"
+    :disabled="disabled || loading"
+    :loading="loading"
+    @click="handleClick"
+  >
+    <slot />
+  </el-button>
+</template>
+```
+
+3.2 组件分层 | Component Layering
+MUST 3.2.01 原子设计分层
+- 原子组件(Atoms)：基础UI元素（按钮/输入/图标）
+- 分子组件(Molecules)：简单组合（搜索框/表单项）
+- 有机体(Organisms)：复杂组合（导航栏/卡片列表）
+- 模板(Templates)：页面布局
+- 页面(Pages)：具体页面
+- 验证方式：目录结构检查
+
+```
+src/
+├── components/
+│   ├── atoms/          # 原子组件
+│   │   ├── Button/
+│   │   ├── Input/
+│   │   └── Icon/
+│   ├── molecules/      # 分子组件
+│   │   ├── SearchBox/
+│   │   └── FormItem/
+│   └── organisms/      # 有机体
+│       ├── Navbar/
+│       └── DataTable/
+├── layouts/            # 模板
+│   ├── MainLayout/
+│   └── AuthLayout/
+└── pages/              # 页面
+    ├── HomePage/
+    └── UserListPage/
+```
+
+MUST 3.2.02 展示组件与Composables分离
+- 展示组件：仅负责UI渲染，通过Props接收数据
+- Composables：负责数据获取和状态管理逻辑复用
+- 验证方式：代码审查
+
+```vue
+<!-- 展示组件 ✓ UserList.vue -->
+<script setup lang="ts">
+import type { User } from '@/types'
+import UserCard from './UserCard.vue'
+
+interface Props {
+  users: User[]
+  loading: boolean
+}
+
+interface Emits {
+  (e: 'refresh'): void
+  (e: 'delete', id: string): void
+}
+
+defineProps<Props>()
+const emit = defineEmits<Emits>()
+</script>
+
+<template>
+  <div v-loading="loading">
+    <UserCard
+      v-for="user in users"
+      :key="user.id"
+      :user="user"
+      @delete="emit('delete', $event)"
+    />
+    <el-button @click="emit('refresh')">Refresh</el-button>
+  </div>
+</template>
+
+<!-- 容器组件（使用Composable）✓ UserListPage.vue -->
+<script setup lang="ts">
+import { useUserList } from '@/composables/useUserList'
+import UserList from './UserList.vue'
+
+const { users, loading, refresh, remove } = useUserList()
+</script>
+
+<template>
+  <UserList
+    :users="users"
+    :loading="loading"
+    @refresh="refresh"
+    @delete="remove"
+  />
+</template>
+```
+
+3.3 Composables使用 | Composables Usage
+MUST 3.3.01 Composables规则
+- 只在`<script setup>`或Composable中调用Vue响应式API
+- 在`<script setup>`顶层调用，不在条件/循环中调用
+- 验证方式：ESLint(vue/no-setup-props-reactivity-loss)
+
+```typescript
+// 正确示例 ✓ (useUserProfile.ts)
+import { ref } from 'vue'
+
+export function useUserProfile() {
+  const user = ref<User | null>(null)
+  const { data, loading } = useFetchUser()
+
+  watch(data, (newData) => {
+    if (newData) user.value = newData
+  })
+
+  return { user, loading }
+}
+
+// 错误示例 ✗
+if (condition) {
+  const state = ref()  // 条件中调用Composable
+}
+```
+
+MUST 3.3.02 响应式依赖
+- watch/computed必须正确声明依赖源
+- 禁止在watch中忽略响应式依赖
+- 验证方式：ESLint(vue/no-watch-without-rhs)
+
+```typescript
+// 正确示例 ✓
+const handleChange = (value: string) => {
+  emit('change', value)
+}
+
+const memoizedValue = computed(() => {
+  return expensiveCalculation(data.value)
+})
+
+// 错误示例 ✗
+watch(() => {}, () => {
+  fetchUser(userId.value)  // 缺少userId依赖
+})
+```
+
+MUST 3.3.03 自定义Composable规范
+- Composable名必须以`use`开头
+- Composable必须返回稳定引用（computed包装）
+- 验证方式：ESLint
+
+```typescript
+// 正确示例 ✓ (useFetch.ts)
+import { ref } from 'vue'
+
+interface UseFetchResult<T> {
+  data: Ref<T | null>
+  loading: Ref<boolean>
+  error: Ref<Error | null>
+  refetch: () => void
+}
+
+export function useFetch<T>(url: string): UseFetchResult<T> {
+  const data = ref<T | null>(null)
+  const loading = ref(true)
+  const error = ref<Error | null>(null)
+
+  const fetchData = async () => {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await fetch(url)
+      const json = await response.json()
+      data.value = json
+    } catch (err) {
+      error.value = err as Error
+    } finally {
+      loading.value = false
+    }
+  }
+
+  watchEffect(() => {
+    fetchData()
+  }, [])
+
+  return { data, loading, error, refetch: fetchData }
+}
+```
+
+3.4 状态管理 | State Management
+MUST 3.4.01 状态选择
+- 本地组件状态：使用`ref()` / `reactive()`
+- 跨组件状态：使用 Pinia
+- 服务器状态：使用 `@tanstack/vue-query` 或 Pinia store
+- 表单状态：使用 Element Plus 表单验证 / `vee-validate`
+- 验证方式：架构审查
+
+MUST 3.4.02 Pinia状态管理
+```typescript
+// stores/user.ts
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+
+export const useUserStore = defineStore('user', () => {
+  const users = ref<User[]>([])
+  const loading = ref(false)
+
+  const fetchUsers = async () => {
+    loading.value = true
+    try {
+      users.value = await userService.getUsers()
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const createUser = async (data: CreateUserDTO) => {
+    const user = await userService.createUser(data)
+    users.value.push(user)
+    return user
+  }
+
+  return { users, loading, fetchUsers, createUser }
+})
+
+// 在组件中使用
+// <script setup lang="ts">
+// const userStore = useUserStore()
+// await userStore.fetchUsers()
+// </script>
+```
+- 验证方式：代码审查
+
+3.5 事件处理 | Event Handling
+MUST 3.5.01 事件处理函数命名
+- 事件处理函数必须以`handle`开头
+- 自定义事件名必须以`on`开头的emit形式定义
+- 验证方式：代码审查
+
+```vue
+<!-- 正确示例 ✓ SearchBox.vue -->
+<script setup lang="ts">
+import { ref } from 'vue'
+
+interface Emits {
+  (e: 'search', keyword: string): void
+  (e: 'change', value: string): void
+}
+
+const keyword = ref('')
+
+const emit = defineEmits<Emits>()
+
+const handleInputChange = (value: string) => {
+  keyword.value = value
+  emit('change', value)
+}
+
+const handleSubmit = () => {
+  emit('search', keyword.value)
+}
+</script>
+
+<template>
+  <el-form @submit.prevent="handleSubmit">
+    <el-input
+      v-model="keyword"
+      @change="handleInputChange"
+    />
+  </el-form>
+</template>
+```
+
+MUST 3.5.02 事件类型
+- 必须明确声明事件类型
+- 验证方式：TypeScript类型检查
+
+```typescript
+// 常用emit事件类型定义
+interface Emits {
+  (e: 'change', value: string): void
+  (e: 'click', event: MouseEvent): void
+  (e: 'submit', event: Event): void
+  (e: 'keydown', event: KeyboardEvent): void
+  (e: 'focus', event: FocusEvent): void
+}
+```
+
+================================================================================
+4. 可访问性规范（MUST）| Accessibility Standards
+================================================================================
+4.1 语义化HTML | Semantic HTML
+MUST 4.1.01 HTML标签使用
+- 必须使用语义化标签（header/nav/main/section/article/footer）
+- 禁止使用div/button代替原生标签
+- 验证方式：ESLint(vuejs-accessibility)
+
+```vue
+<!-- 正确示例 ✓ AppLayout.vue -->
+<script setup lang="ts">
+</script>
+
+<template>
+  <header>
+    <nav aria-label="Main navigation">
+      <ul>
+        <li><a href="/">Home</a></li>
+        <li><a href="/about">About</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main>
+    <h1>Page Title</h1>
+    <article>Content...</article>
+  </main>
+  <footer>&copy; 2025</footer>
+</template>
+
+<!-- 错误示例 ✗ -->
+<!-- <div class="header">...</div> -->
+<!-- <div class="button" @click="...">Click</div> -->
+```
+
+MUST 4.1.02 标题层级
+- 每个页面必须有且仅有一个h1
+- 标题必须按层级顺序使用，不得跳跃
+- 验证方式：axe DevTools
+
+```html
+<!-- 正确示例 ✓ -->
+<h1>Page Title</h1>
+  <section>
+    <h2>Section Title</h2>
+      <h3>Subsection Title</h3>
+  </section>
+
+<!-- 错误示例 ✗ -->
+<h3>Page Title</h3>  <!-- 不是h1 -->
+<h1>Section</h1>
+<h4>Subsection</h4>  <!-- 跳跃了h2/h3 -->
+```
+
+4.2 ARIA属性 | ARIA Attributes
+MUST 4.2.01 ARIA使用规范
+- 仅在原生HTML无法满足时使用ARIA
+- 优先使用原生语义而非ARIA
+- 验证方式：axe DevTools
+
+```vue
+<!-- 正确示例 ✓ -->
+<script setup lang="ts">
+import { Close as XIcon } from '@element-plus/icons-vue'
+
+interface Emits {
+  (e: 'close'): void
+}
+
+const emit = defineEmits<Emits>()
+</script>
+
+<template>
+  <button aria-label="Close dialog" @click="emit('close')">
+    <el-icon><XIcon /></el-icon>
+  </button>
+</template>
+
+<!-- Tab面板 -->
+<div role="tabpanel" aria-labelledby="tab-1" aria-hidden="false">
+  Tab 1 content
+</div>
+
+<!-- 错误示例 ✗ -->
+<!-- <div @click="..." role="button">  应使用button -->
+<!-- <div role="navigation">  应使用nav -->
+```
+
+MUST 4.2.02 必填的ARIA属性
+- 交互元素必须有accessible name
+- 图标按钮必须有aria-label
+- 弹窗/对话框必须有role和aria-describedby
+- 验证方式：axe DevTools
+
+```vue
+<!-- 正确示例 ✓ -->
+<script setup lang="ts">
+import { Delete as TrashIcon } from '@element-plus/icons-vue'
+
+interface Emits {
+  (e: 'delete'): void
+}
+
+const emit = defineEmits<Emits>()
+</script>
+
+<template>
+  <button aria-label="Delete item" @click="emit('delete')">
+    <el-icon><TrashIcon /></el-icon>
+  </button>
+</template>
+
+<!-- 对话框 -->
+<el-dialog
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="dialog-title"
+  aria-describedby="dialog-description"
+>
+  <template #header>
+    <h2 id="dialog-title">Confirm Delete</h2>
+  </template>
+  <p id="dialog-description">Are you sure?</p>
+</el-dialog>
+```
+
+4.3 键盘导航 | Keyboard Navigation
+MUST 4.3.01 焦点管理
+- 所有交互元素必须可聚焦
+- 焦点必须可见（outline样式）
+- 模态框打开时必须捕获焦点
+- 模态框关闭时必须返回焦点
+- 验证方式：键盘测试
+
+```vue
+<!-- 正确示例 ✓ - Modal焦点管理 AppModal.vue -->
+<script setup lang="ts">
+import { ref, watch, onUnmounted } from 'vue'
+
+interface Props {
+  isOpen: boolean
+}
+
+interface Emits {
+  (e: 'close'): void
+}
+
+const props = defineProps<Props>()
+const emit = defineEmits<Emits>()
+
+const modalRef = ref<HTMLDivElement | null>(null)
+const previousActiveElement = ref<HTMLElement | null>(null)
+
+watch(() => props.isOpen, (isOpen) => {
+  if (isOpen) {
+    // 保存当前焦点元素
+    previousActiveElement.value = document.activeElement as HTMLElement
+    // 聚焦到Modal
+    setTimeout(() => modalRef.value?.focus(), 0)
+    // 禁止body滚动
+    document.body.style.overflow = 'hidden'
+  } else {
+    // 恢复焦点
+    previousActiveElement.value?.focus()
+    document.body.style.overflow = ''
+  }
+})
+
+onUnmounted(() => {
+  document.body.style.overflow = ''
+})
+</script>
+
+<template>
+  <div
+    v-if="isOpen"
+    ref="modalRef"
+    role="dialog"
+    aria-modal="true"
+    tabindex="-1"
+    class="modal"
+  >
+    <slot />
+  </div>
+</template>
+```
+
+MUST 4.3.02 键盘快捷键
+- 快捷键不得与浏览器/屏幕阅读器冲突
+- 必须提供快捷键说明
+- 验证方式：键盘测试
+
+```vue
+<!-- 正确示例 ✓ -->
+<script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
+
+interface Emits {
+  (e: 'close'): void
+}
+
+const emit = defineEmits<Emits>()
+
+const handleEscape = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    emit('close')
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', handleEscape)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleEscape)
+})
+</script>
+```
+
+4.4 颜色与对比度 | Color & Contrast
+MUST 4.4.01 对比度要求
+- 正常文本：对比度 >= 4.5:1
+- 大文本（18pt+或14pt粗体+）：对比度 >= 3:1
+- UI组件：对比度 >= 3:1
+- 验证方式： axe DevTools / Contrast Checker
+
+MUST 4.4.02 不依赖颜色传达信息
+- 不能仅用颜色区分状态
+- 必须配合图标/文字
+- 验证方式：灰度测试
+
+```css
+/* 正确示例 ✓ */
+.error {
+  color: var(--color-error-500);
+  background: var(--color-error-50);
+  border-left: 3px solid var(--color-error-700);
+}
+
+.error::before {
+  content: '⚠';  /* 图标辅助 */
+}
+```
+
+4.5 表单可访问性 | Form Accessibility
+MUST 4.5.01 标签关联
+- 所有表单控件必须有对应的label
+- 隐藏label时必须使用aria-label或aria-labelledby
+- 验证方式：axe DevTools
+
+```html
+<!-- 正确示例 ✓ -->
+<label for="email">Email</label>
+<input id="email" type="email" required />
+
+<!-- 或 -->
+<input aria-label="Email address" type="email" />
+
+<!-- 错误验证必须与input关联 -->
+<input id="email" aria-describedby="email-error" aria-invalid="true" />
+<span id="email-error" role="alert">Please enter a valid email</span>
+```
+
+MUST 4.5.2 错误提示
+- 表单验证错误必须用role="alert"或aria-live="polite"通知
+- 错误消息必须与对应的input关联
+- 验证方式：屏幕阅读器测试
+
+================================================================================
+5. 响应式设计规范（MUST）| Responsive Design Standards
+================================================================================
+5.1 移动优先 | Mobile First
+MUST 5.1.01 移动优先原则
+- 默认样式为移动端，使用min-width媒体查询
+- 验证方式：响应式测试
+
+```css
+/* 默认：移动端样式 */
+.container {
+  padding: var(--spacing-4);
+  font-size: var(--font-size-md);
+}
+
+/* 平板及以上 */
+@media (min-width: 768px) {
+  .container {
+    padding: var(--spacing-8);
+    font-size: var(--font-size-lg);
+  }
+}
+
+/* 桌面 */
+@media (min-width: 1024px) {
+  .container {
+    padding: var(--spacing-12);
+  }
+}
+```
+
+5.2 触摸交互 | Touch Interaction
+MUST 5.2.01 触摸目标尺寸
+- 触摸目标最小尺寸：44px × 44px（Apple HIG）
+- 相邻触摸目标间距：>= 8px
+- 验证方式：触摸测试/设计审查
+
+```css
+/* 正确示例 ✓ */
+.button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: var(--spacing-3) var(--spacing-6);
+}
+
+.button + .button {
+  margin-left: var(--spacing-2);
+}
+```
+
+MUST 5.2.2 手势支持
+- 滑动/缩放/拖拽等手势必须提供替代方案
+- 必须禁用默认的手势冲突（如下拉刷新）
+- 验证方式：手势测试
+
+```vue
+<!-- 正确示例 ✓ SwipeContainer.vue -->
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+
+interface Emits {
+  (e: 'next'): void
+  (e: 'prev'): void
+}
+
+const emit = defineEmits<Emits>()
+const containerRef = ref<HTMLDivElement | null>(null)
+const startX = ref(0)
+
+const handleTouchStart = (e: TouchEvent) => {
+  startX.value = e.touches[0].clientX
+}
+
+const handleTouchEnd = (e: TouchEvent) => {
+  const diff = startX.value - e.changedTouches[0].clientX
+  if (Math.abs(diff) > 50) {
+    diff > 0 ? emit('next') : emit('prev')
+  }
+}
+
+onMounted(() => {
+  containerRef.value?.addEventListener('touchstart', handleTouchStart)
+  containerRef.value?.addEventListener('touchend', handleTouchEnd)
+})
+
+onUnmounted(() => {
+  containerRef.value?.removeEventListener('touchstart', handleTouchStart)
+  containerRef.value?.removeEventListener('touchend', handleTouchEnd)
+})
+</script>
+
+<template>
+  <div ref="containerRef">
+    <slot />
+    <el-button @click="emit('next')">Next</el-button>
+    <el-button @click="emit('prev')">Previous</el-button>
+  </div>
+</template>
+```
+
+================================================================================
+6. 国际化规范（MUST）| Internationalization Standards
+================================================================================
+6.1 多语言支持 | i18n Support
+MUST 6.1.01 i18n框架
+- 必须使用`vue-i18n`国际化框架
+- 禁止硬编码文案
+- 验证方式：文案扫描
+
+```vue
+<!-- 正确示例 ✓ UserProfile.vue -->
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+</script>
+
+<template>
+  <div>
+    <h1>{{ t('user.profile.title') }}</h1>
+    <p>{{ t('user.profile.description', { name: user.name }) }}</p>
+  </div>
+</template>
+
+<!-- 错误示例 ✗ -->
+<!-- <h1>User Profile</h1>  硬编码文案 -->
+```
+
+MUST 6.1.02 翻译文件组织
+```
+locales/
+├── en/
+│   ├── common.json
+│   ├── user.json
+│   └── errors.json
+├── zh-CN/
+│   ├── common.json
+│   ├── user.json
+│   └── errors.json
+└── zh-TW/
+    ├── common.json
+    ├── user.json
+    └── errors.json
+```
+- 验证方式：文件结构检查
+
+6.2 日期数字格式 | Date & Number Formatting
+MUST 6.2.01 格式化规范
+- 必须使用国际化格式化库（Intl API / date-fns）
+- 验证方式：代码审查
+
+```typescript
+// 正确示例 ✓
+// 日期格式化
+const formatDate = (date: Date, locale: string) => {
+  return new Intl.DateTimeFormat(locale, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(date);
+};
+
+// 数字格式化
+const formatNumber = (value: number, locale: string) => {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: 'CNY',
+  }).format(value);
+};
+
+// 相对时间
+const formatRelativeTime = (date: Date, locale: string) => {
+  return new Intl.RelativeTimeFormat(locale, {
+    numeric: 'auto',
+  }).format(-1, 'day');  // "1 day ago"
+};
+```
+
+6.3 RTL支持 | RTL Support
+MUST 6.3.01 RTL布局
+- 阿拉伯语/希伯来语等RTL语言必须支持
+- 使用逻辑属性（margin-inline-start而非margin-left）
+- 验证方式：RTL测试
+
+```css
+/* 正确示例 ✓ */
+.container {
+  /* 使用逻辑属性 */
+  padding-inline-start: var(--spacing-4);
+  padding-inline-end: var(--spacing-4);
+  margin-inline-start: auto;
+  text-align: start;  /* 而非left */
+}
+
+/* 错误示例 ✗ */
+.container {
+  padding-left: var(--spacing-4);   /* 不支持RTL */
+  text-align: left;                 /* 不支持RTL */
+}
+```
+
+```typescript
+// 检测RTL
+const isRTL = () => {
+  return document.dir === 'rtl' ||
+         getComputedStyle(document.body).direction === 'rtl';
+};
+```
+
+6.4 时区处理 | Timezone Handling
+MUST 6.4.01 时区规范
+- 所有时间必须存储为UTC或时间戳
+- 显示时转换为用户本地时区
+- 验证方式：时区测试
+
+```typescript
+// 正确示例 ✓
+import { utcToZonedTime, format } from 'date-fns-tz';
+
+// 存储UTC时间
+const saveOrder = (order: Order) => {
+  order.createdAt = new Date().toISOString();  // UTC
+};
+
+// 显示本地时间
+const displayDate = (utcDate: string, timeZone: string) => {
+  const zonedDate = utcToZonedTime(utcDate, timeZone);
+  return format(zonedDate, 'yyyy-MM-dd HH:mm:ss', { timeZone });
+};
+```
+
+================================================================================
+7. PWA规范（MUST）| Progressive Web App Standards
+================================================================================
+7.1 Service Worker | Service Worker
+MUST 7.1.01 Service Worker注册
+- 必须注册Service Worker支持离线功能
+- 必须处理更新事件
+- 验证方式：Lighthouse PWA检查
+
+```typescript
+// service-worker-registration.ts
+export const registerSW = () => {
+  if ('serviceWorker' in navigator && environment === 'production') {
+    window.addEventListener('load', () => {
+      const swUrl = '/sw.js';
+
+      navigator.serviceWorker.register(swUrl)
+        .then((registration) => {
+          // 检查更新
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            if (newWorker) {
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  // 新版本可用，提示用户刷新
+                  notifyUpdateAvailable();
+                }
+              });
+            }
+          });
+        })
+        .catch((error) => {
+          console.error('SW registration failed:', error);
+        });
+    });
+  }
+};
+```
+
+MUST 7.1.02 缓存策略
+- 静态资源：Cache First（缓存优先）
+- API请求：Network First（网络优先）
+- 离线回退：提供离线页面
+- 验证方式：离线测试
+
+```typescript
+// sw.js
+const CACHE_NAME = 'app-v1';
+const STATIC_CACHE = 'static-v1';
+const API_CACHE = 'api-v1';
+
+// 静态资源：Cache First
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // 静态资源
+  if (url.origin === location.origin) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        return cached || fetch(request).then((response) => {
+          return caches.open(STATIC_CACHE).then((cache) => {
+            cache.put(request, response.clone());
+            return response;
+          });
+        });
+      })
+    );
+    return;
+  }
+
+  // API请求：Network First
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(API_CACHE).then((cache) => cache.put(request, clone));
+          return response;
+        })
+        .catch(() => caches.match(request))
+    );
+    return;
+  }
+});
+```
+
+7.2 Manifest | Web App Manifest
+MUST 7.2.01 Manifest配置
+```json
+{
+  "name": "Shop App",
+  "short_name": "Shop",
+  "description": "E-commerce application",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2196f3",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["shopping", "e-commerce"],
+  "lang": "zh-CN",
+  "dir": "ltr"
+}
+```
+- 验证方式：Lighthouse Manifest检查
+
+7.3 安装提示 | Install Prompt
+MUST 7.3.01 安装提示处理
+```typescript
+// composables/useInstallPrompt.ts
+import { ref, onMounted, onUnmounted } from 'vue'
+
+export function useInstallPrompt() {
+  const deferredPrompt = ref<Event | null>(null)
+  const showPrompt = ref(false)
+
+  const handler = (e: Event) => {
+    e.preventDefault()
+    deferredPrompt.value = e
+    showPrompt.value = true
+  }
+
+  onMounted(() => {
+    window.addEventListener('beforeinstallprompt', handler)
+  })
+
+  onUnmounted(() => {
+    window.removeEventListener('beforeinstallprompt', handler)
+  })
+
+  const install = async () => {
+    if (!deferredPrompt.value) return
+    ;(deferredPrompt.value as any).prompt()
+    const { outcome } = await (deferredPrompt.value as any).userChoice
+    showPrompt.value = false
+  }
+
+  return { showPrompt, install }
+}
+```
+- 验证方式：安装测试
+
+================================================================================
+8. 性能规范（MUST）| Performance Standards
+================================================================================
+8.1 核心指标 | Core Metrics
+MUST 8.1.01 Core Web Vitals
+- LCP（最大内容绘制）<= 2.5s
+- INP（交互延迟）<= 200ms
+- CLS（累积布局偏移）<= 0.1
+- 验证方式：Lighthouse / CrUX
+
+```typescript
+// 性能监控
+export const reportWebVitals = (metric: any) => {
+  const { name, value, id } = metric;
+
+  // 发送到分析平台
+  analytics.track('web-vitals', {
+    metric: name,
+    value: Math.round(name === 'CLS' ? value * 1000 : value),
+    id,
+  });
+
+  // 也可以发送到自己的API
+  if (value > threshold[name]) {
+    alertPerformanceIssue(name, value);
+  }
+};
+
+const threshold = {
+  LCP: 2500,
+  INP: 200,
+  CLS: 0.1,
+  FCP: 1800,
+  TTI: 3800,
+};
+```
+
+MUST 8.1.02 其他性能指标
+- FCP（首次内容绘制）<= 1.8s
+- TTI（可交互时间）<= 3.8s
+- TBT（总阻塞时间）<= 200ms
+- Speed Index <= 3.4s
+- 验证方式：Lighthouse
+
+8.2 资源优化 | Resource Optimization
+MUST 8.2.01 图片优化
+- 使用现代格式（WebP/AVIF）
+- 实现响应式图片（srcset/sizes）
+- 实现懒加载
+- 验证方式：Lighthouse
+
+```vue
+<!-- 正确示例 ✓ -->
+<!-- 首屏图片优先加载 -->
+<img
+  src="/images/hero.jpg"
+  alt="Hero"
+  width="1920"
+  height="1080"
+  fetchpriority="high"
+/>
+
+<!-- 响应式图片 + 懒加载 -->
+<picture>
+  <source srcset="/images/hero.avif" type="image/avif" />
+  <source srcset="/images/hero.webp" type="image/webp" />
+  <img src="/images/hero.jpg" alt="Hero" loading="lazy" />
+</picture>
+```
+
+MUST 8.2.02 字体优化
+- 使用font-display: swap避免FOUT
+- 仅加载需要的字符subset
+- 预加载关键字体
+- 验证方式：Lighthouse
+
+```css
+/* 正确示例 ✓ */
+@font-face {
+  font-family: 'Custom Font';
+  src: url('/fonts/custom.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;  /* 避免不可见文本闪烁 */
+  unicode-range: U+0020-007E;  /* 仅加载需要的字符 */
+}
+
+/* 预加载关键字体 */
+<link
+  rel="preload"
+  href="/fonts/critical.woff2"
+  as="font"
+  type="font/woff2"
+  crossOrigin="anonymous"
+/>
+```
+
+MUST 8.2.03 代码分割
+- 路由级别代码分割（必须）
+- 组件级别懒加载（推荐）
+- 验证方式：Bundle分析
+
+```typescript
+// 正确示例 ✓ - 路由分割（router/index.ts）
+import { createRouter, createWebHistory } from 'vue-router'
+import { defineAsyncComponent } from 'vue'
+
+const HomePage = defineAsyncComponent(() => import('@/pages/HomePage.vue'))
+const UserPage = defineAsyncComponent(() => import('@/pages/UserPage.vue'))
+const AdminPage = defineAsyncComponent(() => import('@/pages/AdminPage.vue'))
+
+const routes = [
+  { path: '/', component: HomePage },
+  { path: '/user', component: UserPage },
+  { path: '/admin', component: AdminPage },
+]
+
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+})
+
+export default router
+
+// 组件懒加载（在SFC中使用）
+// <script setup lang="ts">
+// import { defineAsyncComponent } from 'vue'
+// const HeavyComponent = defineAsyncComponent(() => import('@/components/HeavyComponent.vue'))
+// </script>
+// <template>
+//   <Suspense>
+//     <template #default>
+//       <HeavyComponent />
+//     </template>
+//     <template #fallback>
+//       <el-skeleton :rows="5" animated />
+//     </template>
+//   </Suspense>
+// </template>
+```
+
+8.3 性能预算 | Performance Budget
+MUST 8.3.01 Bundle大小限制
+```javascript
+// .bundlewatch.config.js
+module.exports = {
+  files: [
+    {
+      path: './dist/**/*.js',
+      maxSize: '250 KB',  // 首屏JS
+    },
+    {
+      path: './dist/**/*.css',
+      maxSize: '50 KB',   // CSS
+    },
+  ],
+};
+```
+- 验证方式：CI预算检查
+
+MUST 8.3.2 资源数量限制
+- HTTP请求数 <= 100（HTTP/2可放宽）
+- DOM节点数 <= 1500
+- iframe数量 <= 3
+- 验证方式：Lighthouse
+
+8.4 性能监控 | Performance Monitoring
+MUST 8.4.01 性能指标上报
+```typescript
+// composables/usePerformanceMonitor.ts
+import { onMounted, onUnmounted } from 'vue'
+
+export function usePerformanceMonitor() {
+  let observer: PerformanceObserver | null = null
+  let clsObserver: PerformanceObserver | null = null
+
+  onMounted(() => {
+    // 监控LCP
+    observer = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (entry.entryType === 'largest-contentful-paint') {
+          reportMetric('LCP', entry.startTime)
+        }
+      }
+    })
+    observer.observe({ entryTypes: ['largest-contentful-paint'] })
+
+    // 监控CLS
+    let clsValue = 0
+    clsObserver = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (!(entry as any).hadRecentInput) {
+          clsValue += (entry as any).value
+          reportMetric('CLS', clsValue)
+        }
+      }
+    })
+    clsObserver.observe({ entryTypes: ['layout-shift'] })
+  })
+
+  onUnmounted(() => {
+    observer?.disconnect()
+    clsObserver?.disconnect()
+  })
+}
+```
+- 验证方式：性能监控Dashboard
+
+================================================================================
+9. 安全规范（MUST）| Security Standards
+================================================================================
+9.1 XSS防护 | XSS Prevention
+MUST 9.1.01 模板自动转义
+- Vue3模板自动转义插值表达式中的值
+- 使用`v-html`必须净化HTML内容
+- 验证方式：安全扫描
+
+```vue
+<!-- 正确示例 ✓ -->
+<script setup lang="ts">
+import { computed } from 'vue'
+import DOMPurify from 'dompurify'
+
+interface Props {
+  html: string
+}
+
+const props = defineProps<Props>()
+
+const cleanHtml = computed(() => DOMPurify.sanitize(props.html))
+</script>
+
+<template>
+  <!-- 自动转义，安全 -->
+  <div>{{ maliciousContent }}</div>
+
+  <!-- 使用v-html时必须净化 -->
+  <div v-html="cleanHtml" />
+</template>
+```
+
+MUST 9.1.02 URL参数处理
+```vue
+<!-- 正确示例 ✓ SearchPage.vue -->
+<script setup lang="ts">
+import { useRoute } from 'vue-router'
+import { computed } from 'vue'
+
+const route = useRoute()
+
+// 必须验证和转义
+const keyword = computed(() => route.query.q as string || '')
+const safeKeyword = computed(() => escapeHtml(keyword.value))
+</script>
+
+<template>
+  <div>Search: {{ safeKeyword }}</div>
+</template>
+```
+
+9.2 CSP配置 | Content Security Policy
+MUST 9.2.01 CSP头设置
+```http
+Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-abc123' https://cdn.example.com; style-src 'self' 'unsafe-inline' https://fonts.example.com; img-src 'self' data: https:; connect-src 'self' https://api.example.com; font-src 'self' https://fonts.example.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests;
+```
+- 验证方式：CSP Evaluator
+
+9.3 敏感数据处理 | Sensitive Data Handling
+MUST 9.3.01 禁止存储敏感信息
+```typescript
+// 正确示例 ✓
+// 使用httpOnly cookie存储token
+// 使用sessionStorage存储临时会话信息
+// 不在localStorage存储敏感信息
+
+// 错误示例 ✗
+localStorage.setItem('token', token);  // 禁止
+localStorage.setItem('password', password);  // 严格禁止
+```
+
+MUST 9.3.02 控制台输出
+```typescript
+// 生产环境禁止console.log敏感信息
+if (process.env.NODE_ENV === 'production') {
+  console.log = () => {};
+  console.warn = () => {};
+  console.error = () => {};  // 保留error用于调试
+}
+```
+
+9.4 OAuth/JWT处理 | OAuth/JWT Handling
+MUST 9.4.01 Token处理
+```typescript
+// composables/useTokenRefresh.ts
+import { onMounted, onUnmounted } from 'vue'
+
+export function useTokenRefresh() {
+  let refreshInterval: ReturnType<typeof setInterval> | null = null
+
+  onMounted(() => {
+    refreshInterval = setInterval(async () => {
+      const { expiresAt } = getAuthState()
+      if (expiresAt && Date.now() > expiresAt - 5 * 60 * 1000) {
+        // 过期前5分钟刷新
+        await refreshAccessToken()
+      }
+    }, 60 * 1000) // 每分钟检查
+  })
+
+  onUnmounted(() => {
+    if (refreshInterval) {
+      clearInterval(refreshInterval)
+    }
+  })
+}
+
+// Token撤销（登出时）
+export const logout = async () => {
+  await revokeToken()
+  clearAuthState()
+  redirectToLogin()
+}
+```
+
+================================================================================
+10. 测试规范（MUST）| Testing Standards
+================================================================================
+10.1 测试金字塔 | Testing Pyramid
+MUST 10.1.01 测试分层
+```
+           /\
+          /E2E\        少量端到端测试（5%）
+         /------\
+        /  集成  \     适量集成测试（15%）
+       /----------\
+      /   单元测试  \  大量单元测试（80%）
+     /--------------\
+```
+- 验证方式：测试覆盖率报告
+
+MUST 10.1.02 单元测试规范
+```typescript
+// 使用Vitest + @vue/test-utils
+import { mount, shallowMount } from '@vue/test-utils'
+import { describe, it, expect, vi } from 'vitest'
+
+import CustomButton from './CustomButton.vue'
+
+describe('CustomButton', () => {
+  it('should render slot content', () => {
+    const wrapper = mount(CustomButton, {
+      slots: { default: 'Click me' },
+    })
+    expect(wrapper.text()).toContain('Click me')
+  })
+
+  it('should emit click when clicked', async () => {
+    const wrapper = mount(CustomButton, {
+      slots: { default: 'Click me' },
+    })
+
+    await wrapper.find('button').trigger('click')
+
+    expect(wrapper.emitted('click')).toHaveLength(1)
+  })
+
+  it('should be disabled when loading', () => {
+    const wrapper = mount(CustomButton, {
+      props: { loading: true },
+    })
+    expect(wrapper.find('button').attributes('disabled')).toBeDefined()
+  })
+
+  it('should match snapshot', () => {
+    const wrapper = mount(CustomButton, {
+      props: { variant: 'primary' },
+      slots: { default: 'Click' },
+    })
+    expect(wrapper.html()).toMatchSnapshot()
+  })
+})
+```
+- 验证方式：Vitest/Jest
+
+MUST 10.1.03 集成测试规范
+```typescript
+// API集成测试
+import { mount } from '@vue/test-utils'
+import { setupServer } from 'msw/node'
+import { http, HttpResponse } from 'msw'
+import { describe, it, expect, beforeAll, afterEach, afterAll } from 'vitest'
+import flushPromises from 'flush-promises'
+
+import UserListPage from './UserListPage.vue'
+
+const server = setupServer(
+  http.get('/api/users', () => {
+    return HttpResponse.json([{ id: '1', name: 'Test User' }])
+  })
+)
+
+describe('UserList integration', () => {
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
+  it('should fetch and display users', async () => {
+    const wrapper = mount(UserListPage)
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Test User')
+  })
+})
+```
+
+MUST 10.1.04 E2E测试规范
+```typescript
+// 使用Playwright
+import { test, expect } from '@playwright/test';
+
+test.describe('User login flow', () => {
+  test('should login successfully', async ({ page }) => {
+    await page.goto('/login');
+    await page.fill('[name="email"]', 'test@example.com');
+    await page.fill('[name="password"]', 'password123');
+    await page.click('button[type="submit"]');
+
+    await expect(page).toHaveURL('/dashboard');
+    await expect(page.locator('h1')).toContainText('Welcome');
+  });
+
+  test('should show error for invalid credentials', async ({ page }) => {
+    await page.goto('/login');
+    await page.fill('[name="email"]', 'test@example.com');
+    await page.fill('[name="password"]', 'wrong-password');
+    await page.click('button[type="submit"]');
+
+    await expect(page.locator('.error')).toContainText('Invalid credentials');
+  });
+});
+```
+
+10.2 测试覆盖率 | Test Coverage
+MUST 10.2.01 覆盖率要求
+```javascript
+// vitest.config.js
+export default defineConfig({
+  test: {
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      lines: 80,       // 行覆盖率 >= 80%
+      functions: 80,   // 函数覆盖率 >= 80%
+      branches: 75,    // 分支覆盖率 >= 75%
+      statements: 80,  // 语句覆盖率 >= 80%
+    },
+  },
+});
+```
+- 验证方式：覆盖率报告
+
+10.3 Mock规范 | Mock Standards
+MUST 10.3.01 Mock使用规范
+```typescript
+// 正确示例 ✓
+import { vi } from 'vitest'
+
+// Mock API
+vi.mock('@/services/user', () => ({
+  getUsers: vi.fn(() => Promise.resolve(mockUsers)),
+}))
+
+// Mock Composable
+vi.mock('@/composables/useAuth', () => ({
+  useAuth: () => ({
+    user: ref(mockUser),
+    isAuthenticated: ref(true),
+  }),
+}))
+
+// Mock Pinia Store
+vi.mock('@/stores/user', () => ({
+  useUserStore: () => ({
+    users: ref(mockUsers),
+    loading: ref(false),
+    fetchUsers: vi.fn(),
+  }),
+}))
+
+// Mock部分功能
+import * as api from '@/utils/api'
+vi.spyOn(api, 'fetchData').mockResolvedValue({ data: 'mock' })
+```
+
+================================================================================
+11. 组件文档规范（MUST）| Component Documentation Standards
+================================================================================
+11.1 Storybook配置 | Storybook Configuration
+MUST 11.1.01 Storybook基本配置
+```typescript
+// .storybook/main.ts
+import type { StorybookConfig } from '@storybook/vue3-vite'
+
+const config: StorybookConfig = {
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
+  addons: [
+    '@storybook/addon-links',
+    '@storybook/addon-essentials',
+    '@storybook/addon-interactions',
+    '@storybook/addon-a11y',  // 可访问性检查
+    '@storybook/addon-themes', // 主题切换
+  ],
+  framework: {
+    name: '@storybook/vue3-vite',
+    options: {},
+  },
+  docs: {
+    autodocs: 'tag',
+  },
+}
+
+export default config
+```
+- 验证方式：Storybook构建
+
+MUST 11.1.02 Component Story
+```typescript
+// CustomButton.stories.ts
+import type { Meta, StoryObj } from '@storybook/vue3'
+import CustomButton from './CustomButton.vue'
+
+const meta = {
+  title: 'Components/CustomButton',
+  component: CustomButton,
+  parameters: {
+    layout: 'centered',
+  },
+  tags: ['autodocs'],
+  argTypes: {
+    variant: {
+      control: 'select',
+      options: ['primary', 'secondary', 'danger'],
+    },
+    size: {
+      control: 'select',
+      options: ['small', 'default', 'large'],
+    },
+  },
+} satisfies Meta<typeof CustomButton>
+
+export default meta
+type Story = StoryObj<typeof CustomButton>
+
+// 基础示例
+export const Primary: Story = {
+  args: {
+    variant: 'primary',
+  },
+  render: (args) => ({
+    components: { CustomButton },
+    setup() { return { args } },
+    template: '<CustomButton v-bind="args">Primary Button</CustomButton>',
+  }),
+}
+
+// 状态示例
+export const Loading: Story = {
+  args: {
+    variant: 'primary',
+    loading: true,
+  },
+  render: (args) => ({
+    components: { CustomButton },
+    setup() { return { args } },
+    template: '<CustomButton v-bind="args">Loading...</CustomButton>',
+  }),
+}
+
+export const Disabled: Story = {
+  args: {
+    variant: 'primary',
+    disabled: true,
+  },
+  render: (args) => ({
+    components: { CustomButton },
+    setup() { return { args } },
+    template: '<CustomButton v-bind="args">Disabled</CustomButton>',
+  }),
+}
+```
+
+MUST 11.1.03 MDX文档
+```markdown
+<!-- CustomButton.stories.mdx -->
+import { Meta, Canvas, Story } from '@storybook/blocks'
+import * as CustomButtonStories from './CustomButton.stories'
+
+<Meta title="Components/CustomButton" />
+
+# CustomButton
+
+按钮组件用于触发操作或提交表单。
+
+## 使用指南
+
+<Canvas of={CustomButtonStories.Primary} />
+
+## API
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| variant | 'primary' \| 'secondary' \| 'danger' | 'primary' | 按钮变体 |
+| size | 'small' \| 'default' \| 'large' | 'default' | 按钮尺寸 |
+| disabled | boolean | false | 是否禁用 |
+| loading | boolean | false | 是否加载中 |
+
+## 事件
+
+| 事件名 | 参数 | 说明 |
+|--------|------|------|
+| click | MouseEvent | 点击事件 |
+
+## 无障碍
+
+按钮组件满足WCAG 2.1 AA标准：
+- 键盘可访问
+- 屏幕阅读器支持
+- 对比度符合要求
+```
+
+================================================================================
+12. 工程化规范（MUST）| Engineering Standards
+================================================================================
+12.1 Monorepo规范 | Monorepo Standards
+MUST 12.1.01 Monorepo结构
+```
+apps/
+├── web/                  # Web应用
+├── admin/                # 管理后台
+└── mobile/               # 移动端
+
+packages/
+├── ui/                   # UI组件库
+├── utils/                # 工具函数
+├── types/                # 类型定义
+├── config/               # 共享配置
+└── eslint-config/        # ESLint配置
+```
+- 验证方式：目录结构检查
+
+MUST 12.1.02 pnpm工作空间
+```json
+// pnpm-workspace.yaml
+packages:
+  - 'apps/*'
+  - 'packages/*'
+```
+- 验证方式：pnpm安装测试
+
+12.2 CI/CD配置 | CI/CD Configuration
+MUST 12.2.01 GitHub Actions配置
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run ESLint
+        run: pnpm lint
+      - name: Run Stylelint
+        run: pnpm lint:style
+
+  type-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - name: Install dependencies
+        run: pnpm install
+      - name: Type check
+        run: pnpm type-check
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run unit tests
+        run: pnpm test:unit --coverage
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, type-check, test]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - name: Install dependencies
+        run: pnpm install
+      - name: Build
+        run: pnpm build
+      - name: Check bundle size
+        run: pnpm bundlewatch
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - name: Install dependencies
+        run: pnpm install
+      - name: Install Playwright
+        run: pnpm exec playwright install --with-deps
+      - name: Run E2E tests
+        run: pnpm test:e2e
+```
+
+12.3 依赖管理 | Dependency Management
+MUST 12.3.01 依赖分类
+```json
+{
+  "dependencies": {
+    // 运行时依赖（生产环境必需）
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4",
+    "pinia": "^2.1.6",
+    "element-plus": "^2.3.8",
+    "axios": "^1.4.0",
+    "dayjs": "^1.11.7",
+    "vue-i18n": "^9.9.0"
+  },
+  "devDependencies": {
+    // 开发依赖
+    "typescript": "^5.3.0",
+    "eslint": "^8.55.0",
+    "vite": "^4.4.0"
+  },
+  "peerDependencies": {
+    // 同等依赖（由使用者提供）
+    "vue": ">=3.3.4"
+  }
+}
+```
+
+MUST 12.3.02 依赖升级
+```bash
+# 定期检查过期依赖
+pnpm outdated
+
+# 使用交互式升级工具
+pnpm update -i --latest
+
+# 重大版本升级需要审查
+pnpm add package@major
+```
+- 验证方式：Dependabot配置
+
+12.4 构建工具 | Build Tools
+MUST 12.4.01 Vite配置
+```typescript
+// vite.config.ts
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import path from 'path'
+
+export default defineConfig({
+  plugins: [vue()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  build: {
+    target: 'es2015',
+    minify: 'terser',
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vue: ['vue', 'vue-router', 'pinia'],
+          'element-plus': ['element-plus', '@element-plus/icons-vue'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 500,
+  },
+  server: {
+    port: 3000,
+    open: true,
+  },
+})
+```
+
+================================================================================
+13. 自动化检查清单（MUST）| Automated Checks
+================================================================================
+13.1 ESLint配置 | ESLint Configuration
+```json
+{
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:vue/vue3-recommended",
+    "plugin:vuejs-accessibility/recommended",
+    "prettier"
+  ],
+  "parser": "vue-eslint-parser",
+  "parserOptions": {
+    "parser": "@typescript-eslint/parser",
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "rules": {
+    // TypeScript
+    "@typescript-eslint/no-explicit-any": "error",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/consistent-type-imports": "error",
+    "@typescript-eslint/no-floating-promises": "error",
+    "@typescript-eslint/no-misused-promises": "error",
+
+    // Vue3
+    "vue/component-name-in-template-casing": ["error", "PascalCase"],
+    "vue/require-default-prop": "off",
+    "vue/multi-word-component-names": "warn",
+    "vue/no-v-html": "warn",
+    "vue/require-explicit-emits": "error",
+    "vue/no-setup-props-reactivity-loss": "error",
+    "vue/max-attributes-per-line": "off",
+
+    // Accessibility
+    "vuejs-accessibility/anchor-has-content": "warn",
+    "vuejs-accessibility/click-events-have-key-events": "error",
+    "vuejs-accessibility/no-static-element-interactions": "error",
+
+    // 通用
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-debugger": "error",
+    "no-alert": "warn"
+  }
+}
+```
+
+13.2 Prettier配置 | Prettier Configuration
+```json
+{
+  "semi": true,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "useTabs": false,
+  "trailingComma": "es5",
+  "printWidth": 100,
+  "arrowParens": "always",
+  "endOfLine": "lf"
+}
+```
+
+13.3 Stylelint配置 | Stylelint Configuration
+```json
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "selector-class-pattern": "^[a-z][a-z0-9-]*",
+    "selector-id-pattern": "^[a-z][a-z0-9-]*",
+    "custom-property-pattern": "^[a-z][a-z0-9-]*",
+    "value-no-vendor-prefix": true,
+    "property-no-vendor-prefix": true,
+    "selector-no-vendor-prefix": true,
+    "color-hex-length": "short",
+    "color-named": "never",
+    "declaration-block-no-duplicate-properties": true,
+    "font-family-no-duplicate-names": true,
+    "font-family-name-quotes": "always-where-recommended",
+    "string-quotes": "double",
+    "no-duplicate-selectors": true
+  }
+}
+```
+
+================================================================================
+14. PR检查清单 | PR Review Checklist
+================================================================================
+14.1 PR模板 | PR Template
+```markdown
+## 变更描述
+<!-- 简要描述此PR的内容 -->
+
+## 变更类型
+- [ ] 新功能
+- [ ] Bug修复
+- [ ] 性能优化
+- [ ] 重构
+- [ ] 文档更新
+- [ ] 样式调整
+
+## 测试
+- [ ] 单元测试已添加/更新
+- [ ] 集成测试已添加/更新
+- [ ] E2E测试已添加/更新
+- [ ] 本地测试通过
+
+## 代码质量
+- [ ] ESLint检查通过
+- [ ] TypeScript类型检查通过
+- [ ] Prettier格式化完成
+- [ ] 代码覆盖率未下降
+
+## 设计/可访问性
+- [ ] 设计评审通过
+- [ ] 可访问性检查通过（axe DevTools）
+- [ ] 响应式测试通过
+
+## 文档
+- [ ] Storybook文档已更新
+- [ ] README/CHANGELOG已更新
+
+## 性能
+- [ ] Lighthouse分数未下降
+- [ ] Bundle大小未超预算
+- [ ] 性能指标正常
+
+## 截图（如适用）
+<!-- 添加截图展示变更效果 -->
+```
+
+================================================================================
+15. 附录 | Appendix
+================================================================================
+15.1 推荐资源 | Recommended Resources
+| 类型 | 名称 | 链接 |
+|------|------|------|
+| 设计系统 | SAP Fiori | https://experience.sap.com/fiori-design-web/ |
+| 设计系统 | Salesforce SLDS | https://www.lightningdesignsystem.com/ |
+| 设计系统 | Microsoft Fluent UI | https://fluent2.microsoft.design/ |
+| 组件库 | Element Plus | https://element-plus.org/ |
+| 样式指南 | Airbnb Style Guide | https://github.com/airbnb/javascript |
+| 框架 | Vue3 官方文档 | https://vuejs.org/ |
+| 可访问性 | WCAG 2.1 | https://www.w3.org/WAI/WCAG21/quickref/ |
+| 性能 | Web Vitals | https://web.dev/vitals/ |
+| 测试 | Vue Test Utils | https://test-utils.vuejs.org/ |
+| PWA | PWA Guide | https://web.dev/progressive-web-apps/ |
+
+15.2 联系方式 | Contact Information
+| 角色 | 联系方式 |
+|------|----------|
+| 前端架构组 | 164112436@qq.com |
+| UI设计团队 | 164112436@qq.com |
+| QA团队 | 164112436@qq.com |
+
+15.3 相关文档 | Related Documents
+- 《工程治理与流程规范.txt》
+- 《中间件规范.txt》
+- 《后端规范.txt》
+- 公司UI设计规范
+- 组件库使用文档
+
+================================================================================
+文档结束 | End of Document
+================================================================================

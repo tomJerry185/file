@@ -1,0 +1,1733 @@
+# 工程治理与流程规范
+# Enterprise Engineering Governance and Process Standards
+
+---
+## 文档元数据 | Document Metadata
+---
+
+| 属性 | 值 |
+|------|-----|
+| **文档名称** | 工程治理与流程规范 |
+| **文档版本** | v2.0.2 |
+| **最后更新** | 2026-03-29 |
+| **文档所有者** | 架构委员会 Architecture Board |
+| **维护团队** | 工程效能团队 Engineering Productivity Team |
+| **审批状态** | 已批准 Approved |
+| **下次复审** | 2026-09-19 |
+| **适用范围** | 全体研发团队、平台团队、基础设施团队 |
+
+### 变更历史 | Change History
+
+| 版本 | 日期 | 变更内容 | 变更人 | 审批人 |
+|------|------|----------|--------|--------|
+| v2.0.2 | 2026-03-29 | 修复乱码文字、去除重复章节、统一文档版本日期 | 架构委员会 | CTO |
+| v2.0.1 | 2026-03-19 | 新增对《流程与规范手册.md》的交叉引用及文档体系关联 | 架构委员会 | CTO |
+| v2.0.0 | 2025-12-01 | 重大重构：新增DORA指标、SLA/SLO、CI/CD、测试治理等12个章节 | 架构委员会 | CTO |
+| 1.5.0 | 2025-06-01 | 初始版本 | 工程团队 | Tech Lead |
+
+### 引用标准 | Referenced Standards
+
+| 标准组织 | 标准名称 | 标准编号 |
+|----------|----------|----------|
+| ISO/IEC | Information security management | ISO/IEC 27001:2022 |
+| ISO/IEC | Information security controls | ISO/IEC 27002:2022 |
+| ISO | Business continuity management | ISO 22301:2019 |
+| NIST | Security Development Lifecycle | NIST SP 800-218 |
+| NIST | Security and Privacy Controls | NIST SP 800-53 Rev5 |
+| ITIL | IT Service Management | ITIL 4 |
+| DORA | Accelerate State of DevOps Report | 2024 |
+| OWASP | Application Security Verification | ASVS 4.0 |
+| OWASP | Testing Guide | OTG v4.2 |
+| RFC | Keywords for use in RFCs | RFC 2119 |
+| Google | Engineering Practices | github.com/google/eng-practices |
+| CIS | Benchmarks | CIS Controls v8 |
+| COBIT | IT Governance Framework | COBIT 2019 |
+| TOGAF | Enterprise Architecture | TOGAF 10 |
+
+### 词汇定义 | Terminology
+
+| 中文术语 | 英文 | 定义 |
+|----------|----------|------|
+| 代码审查 | Code Review | 对代码变更进行的系统性检查 |
+| 审查清单 | Review Checklist | 代码审查时使用的检查项列表 |
+| 回滚 | Rollback | 将系统恢复到之前版本的操作 |
+| 变更 | Change | 对系统进行的任何修改 |
+| 发布 | Release | 将变更部署到生产环境 |
+| 事故 | Incident | 服务中断或质量下降的事件 |
+| SLA | Service Level Agreement | 服务水平协议，服务商与客户间的承诺 |
+| SLO | Service Level Objective | 服务水平目标，具体的可度量指标 |
+| SLI | Service Level Indicator | 服务水平指标，测量SOK的数据点 |
+| PII | Personal Identifiable Information | 个人身份信息 |
+| ADR | Architecture Decision Record | 架构决策记录 |
+| RCA | Root Cause Analysis | 根因分析 |
+| CAB | Change Advisory Board | 变更咨询委员会 |
+| SBOM | Software Bill of Materials | 软件物料清单 |
+| DORA | DevOps Research and Assessment | DevOps研究和评估组织 |
+| 密钥管理 | Key Management | 密钥的生命周期管理 |
+| 依赖扫描 | Dependency Scan | 依赖包的安全漏洞扫描 |
+| 供应链安全 | Supply Chain Security | 软件供应链安全管理 |
+
+---
+## 目录 | Table of Contents
+---
+
+1. [基本原则](#1-基本原则)
+2. [研发流程](#2-研发流程)
+3. [代码所有权](#3-代码所有权)
+4. [CI/CD流水线](#4-cicd流水线)
+5. [环境与配置管理](#5-环境与配置管理)
+6. [测试治理](#6-测试治理)
+7. [安全与合规](#7-安全与合规)
+8. [可观测性](#8-可观测性)
+9. [SLA/SLO管理](#9-slaslo管理)
+10. [事故管理](#10-事故管理)
+11. [架构治理](#11-架构治理)
+12. [依赖与供应链安全](#12-依赖与供应链安全)
+13. [文档规范](#13-文档规范)
+14. [代码库治理](#14-代码库治理)
+15. [效能度量](#15-效能度量)
+16. [自动化检查](#16-自动化检查)
+17. [发布策略](#17-发布策略)
+18. [工具链规范](#18-工具链规范)
+19. [模板与附录](#19-模板与附录)
+
+---
+## 1. 基本原则
+---
+
+### 1.0 核心原则（MUST）
+
+| 规范 | 要求 | 验证方式 |
+|------|------|----------|
+| **可验证性** | 所有规范条目必须可被工具校验或人工评审验证 | CI检查/审查清单 |
+| **标注要求** | 每条MUST/关键条款需标注"验证方式" | 规范审查 |
+| **密钥管理** | 不得在仓库、文档、配置、脚本中保存任何明文密钥/账号/Token | Secrets扫描 |
+| **可回滚性** | 任何发布必须可回滚（脚本/开关/灰度策略必须可用） | 发布记录/回滚演练 |
+| **可维护性** | 产出可维护、可测、可观测、可扩展的代码 | 代码审查 |
+
+### 1.1 规范分级（MUST）
+
+根据RFC 2119标准，本规范使用以下关键词定义要求级别：
+
+| 级别 | 含义 | 违规后果 |
+|------|------|----------|
+| **MUST** | 必须满足 | 阻止合并/发布 |
+| **MUST NOT** | 禁止执行 | 阻止合并/发布 |
+| **SHOULD** | 强烈建议 | Code Review指出 |
+| **SHOULD NOT** | 强烈不建议 | Code Review指出 |
+| **MAY** | 可选 | 不影响流程 |
+
+### 1.2 例外与豁免机制（MUST）
+
+```
+例外申请流程：
+1. 创建例外申请ADR或工单
+2. 说明：原因/范围/风险/有效期/回滚方案
+3. Owner/CodeOwner审批
+4. 在PR/变更记录中标注例外编号
+5. 到期前复审或清理
+```
+
+验证方式：PR模板/变更记录/审查清单/例外追踪系统
+
+### 1.3 默认验证规则（MUST）
+
+未逐条标注验证方式的条款，按以下默认规则执行：
+
+| 条款类型 | 默认验证方式 |
+|----------|--------------|
+| 命名/格式/注释 | lint/checkstyle/markdownlint |
+| 代码结构/分层 | 静态扫描 + 代码审查 |
+| 流程/评审/发布 | PR模板/发布记录 |
+| 可观测性 | 日志Schema校验/监控看板 |
+| 安全/合规 | Secrets扫描/依赖扫描 |
+| 配置与环境 | 配置扫描/审计日志 |
+
+---
+## 2. 研发流程
+---
+
+### 2.1 变更最小化（SHOULD）
+
+| 指标 | 默认阈值 | 例外处理 |
+|------|----------|----------|
+| 单CL变更文件数 | <= 20 | 需PR说明拆分计划 |
+| 单CL新增代码行 | <= 500 | 需风险评估 |
+
+关键路径改动必须附：回滚步骤 + 验证步骤
+
+验证方式：PR模板/审查清单
+
+### 2.2 设计与决策记录（MUST）
+
+| 变更类型 | 要求 |
+|----------|------|
+| 新增核心能力 | 必须有设计文档 |
+| 跨模块改动 | 必须有ADR |
+| 架构调整 | 必须有ADR |
+
+ADR必须包含以下核心结构：Status、Context、Decision、Consequences（正面/负面影响/技术债务）、Alternatives Considered。
+
+> **模板/详细流程**：参见《流程与规范手册.md》第8.2节"ADR模板"。该节提供完整的ADR模板结构（含Implementation、Related字段），以及ADR编写和审批流程。
+
+验证方式：ADR文档/审查记录
+
+### 2.3 代码审查（MUST）
+
+| 项目 | 要求 |
+|--------|------|
+| 最低评审人数 | 1名非作者（LGTM） |
+| 关键路径评审 | 2名评审，1名为代码所有者 |
+| 评审关注点 | 正确性/可维护性/测试/安全/性能/可观测性 |
+| 评审响应SLA | 普通PR: 24h; 紧急PR: 2h |
+
+关键路径定义：支付/权限/配置中心/网关/用户数据
+
+> **相关文档**：详见《流程与规范手册.md》第3章"代码审查与Checklist"章节，本规范定义评审机制（SLA、人数、关键路径），该手册提供具体的评审检查项和流程。
+> **相关文档**：详见《前端规范.txt》第12章"自动化检查"章节，本规范要求关键代码路径必须进行评审（CODEOWNERS）。
+
+验证方式：CODEOWNERS/审查记录/例外追踪系统/相关文档交叉检查
+
+### 2.4 研发闭环流程（MUST）
+
+```
+需求澄清 → 方案/ADR → 实现 → 自测/联调 → 自动化测试 → 发布 → 监控 → 复盘
+     ↑                                                              ↓
+     └──────────────────────── 持续反馈 ←──────────────────────┘
+```
+
+关键变更必须包含：
+- 验收标准（Acceptance Criteria）
+- 风险评估（Risk Assessment）
+- 监控指标（Monitoring Metrics）
+- 回滚方案（Rollback Plan）
+
+验证方式：需求单/ADR/发布记录/复盘记录
+
+### 2.5 变更审批流程（MUST）
+
+#### 2.5.1 常规变更流程
+
+```
+开发者提交PR → 自动化检查 → 代码审查 → 审批通过 → 合并 → 自动部署
+```
+
+#### 2.5.2 CAB变更流程（高风险变更）
+
+| 风险等级 | 审批要求 | CAB会议 |
+|----------|---------|---------|
+| 低 | Tech Lead审批 | 无需会议 |
+| 中 | Team Lead + 架构师 | 每周例会 |
+| 高 | CAB全员 + CTO | 专门会议 |
+
+CAB成员构成：
+- 技术负责人
+- 安全负责人
+- 运维负责人
+- 产品负责人
+- 架构师
+
+#### 2.5.3 紧急变更流程
+
+```
+紧急变更申请 → 快速审批（15分钟内）→ 执行 → 补审（24小时内）→ 复盘
+```
+
+紧急变更定义：
+- 生产严重故障
+- 安全漏洞修复
+- 合规紧急要求
+
+验证方式：工单系统/CAB会议记录
+
+---
+## 3. 代码所有权
+---
+
+### 3.1 CODEOWNERS配置（MUST）
+
+必须维护CODEOWNERS文件，格式如下：
+
+```
+# 全局默认所有者
+* @tech-lead @architecture-board
+
+# 关键路径所有者
+/api-gateway/** @gateway-team @security-team
+/payment/** @payment-team @security-team @finance-lead
+/user/** @user-team @privacy-team
+
+# 特定文件
+**/production.yml @sre-team
+**/CODEOWNERS @architecture-board
+
+# 团队目录
+api-gateway/** @gateway-team
+payment/** @payment-team
+user/** @user-team
+
+# 文档
+docs/** @tech-lead
+**/CODEOWNERS @architecture-board
+
+# 配置
+config/** @devops-team
+**/CODEOWNERS @architecture-board
+
+# 忽略某些文件
+*.log @no-one
+**/vendor/** @no-one
+**/node_modules/** @no-one
+```
+
+### 3.2 所有权覆盖要求（MUST）
+
+| 覆盖项 | 要求 |
+|--------|------|
+| 所有服务目录 | 必须有OWNERS |
+| 根目录 | 必须有默认OWNERS |
+| 关键配置 | 必须有SRE OWNERS |
+| 未匹配目录 | 禁止合并变更 |
+
+> **相关文档**：详见《流程与规范手册.md》第4章"持续集成与部署"章节，本规范定义CODEOWNERS的格式和覆盖要求。
+
+验证方式：CODEOWNERS文件/CI检查
+
+### 3.3 所有权转移流程（MUST）
+
+```
+1. 原所有者发起转移请求
+2. 新所有者确认接受
+3. 更新CODEOWNERS文件
+4. 团队公告
+5. 知识转移（文档/交接会议）
+```
+
+---
+## 4. CI/CD流水线
+---
+
+### 4.1 流水线设计原则（MUST）
+
+| 规则 | 说明 |
+|------|------|
+| **快速反馈** | 单元测试阶段 < 10分钟 |
+| **并行执行** | 独立任务并行运行 |
+| **失败即停** | 关键检查失败立即停止 |
+| **安全性** | 凭证使用Secret管理 |
+
+### 4.2 流水线阶段（MUST）
+
+```yaml
+stages:
+  lint:          # 代码风格检查（2-5分钟）
+    - markdownlint
+    - yamllint
+    - eslint
+    - shellcheck
+
+  security:       # 安全扫描（5-10分钟）
+    - secrets-scan
+    - dependency-scan
+    - sast-scan
+    - license-scan
+
+  test:          # 测试执行（10-30分钟）
+    - unit-test
+    - integration-test
+    - coverage-check
+
+  build:         # 构建阶段（5-15分钟）
+    - compile
+    - package
+    - docker-build
+
+  deploy:        # 部署阶段（5-10分钟）
+    - deploy-dev
+    - deploy-staging
+    - deploy-production (manual)
+```
+
+> **相关文档**：本节定义流水线架构、阶段设计和质量门禁标准（WHAT）。关于CI/CD的流程集成矩阵、质量门禁配置和DevOps工作流（HOW），参见《流程与规范手册.md》第9章"DevOps流程集成"。
+
+### 4.3 流水线配置示例（MUST）
+
+```yaml
+# .github/workflows/ci.yml
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+
+env:
+  JAVA_VERSION: '17'
+  NODE_VERSION: '18'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run markdownlint
+        run: npx markdownlint '**/*.md'
+      - name: Run yamllint
+        run: yamllint .
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+      - name: Run tests
+        run: mvn clean test
+      - name: Coverage check
+        run: mvn jacoco:check
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+
+  build:
+    name: Build
+    needs: [lint, security, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+      - name: Build Docker image
+        run: docker build -t app:${{ github.sha }} .
+
+  deploy:
+    name: Deploy
+    needs: [build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+      - name: Build Docker image
+        run: docker build -t app:${{ github.sha }} .
+```
+
+验证方式：CI配置/流水线执行记录
+
+---
+## 5. 环境与配置管理
+---
+
+### 5.1 环境定义（MUST）
+
+| 环境 | 用途 | 数据来源 | 访问权限 |
+|------|------|----------|----------|
+| **dev** | 开发自测 | Mock/测试数据 | 全体开发者 |
+| **test** | 集成测试 | 测试数据集 | 测试团队 |
+| **staging** | 预生产验证 | 脱敏生产数据 | QA + SRE |
+| **production** | 生产环境 | 生产数据 | SRE only |
+
+### 5.2 配置管理原则（MUST）
+
+| 原则 | 说明 |
+|------|------|
+| **配置外置** | 配置不得打包到镜像中 |
+| **敏感加密** | 密码/密钥必须加密存储 |
+| **版本控制** | 配置变更必须可追踪 |
+| **环境隔离** | 不同环境配置独立管理 |
+| **中心存储** | 使用配置中心（Nacos/Apollo） |
+
+### 5.3 配置中心规范（MUST）
+
+```yaml
+# Nacos配置示例
+# Data ID: application-{profile}.yml
+
+spring:
+  datasource:
+    url: ${db.url}  # 加密存储
+    username: ${db.username}
+    password: ${db.password}  # 加密存储
+
+# 配置分组
+groups:
+  - COMMON: 通用配置
+  - SERVICE: 服务配置
+  - INFRA: 基础设施配置
+
+# 配置版本
+versioning:
+  enabled: true
+  historyRetention: 90  # 天
+
+# 动态刷新
+refresh:
+  enabled: true
+  scope: configserver:*  # 支持的配置前缀
+```
+
+> **相关文档**：详见《流程与规范手册.md》第13章"文档规范"章节，本规范定义配置中心的格式和版本管理要求。
+
+### 5.4 配置变更流程（MUST）
+
+```
+配置变更申请 → 影响评估 → 审批 → 测试环境验证 → 预发验证 → 生产变更 → 验证
+```
+
+配置变更必须包含：
+- 变更原因
+- 影响范围
+- 测试验证结果
+- 回滚方案
+
+验证方式：配置中心审计日志/变更记录
+
+---
+## 6. 测试治理
+---
+
+### 6.1 测试金字塔（MUST）
+
+```
+           /\
+       /  \      E2E Tests (5%)
+      /____\     关键用户路径
+     /      \
+    /        \  Integration Tests (15%)
+   /__________\ API/服务集成
+  /            \
+  /              \ Unit Tests (80%)
+/________________\ 单元/函数/组件
+```
+
+| 测试类型 | 占比 | 执行频率 | 执行时长 |
+|----------|------|----------|----------|
+| 单元测试 | >= 80% | 每次提交 | < 10分钟 |
+| 集成测试 | 10-15% | 每次合并 | < 30分钟 |
+| E2E测试 | <= 5% | 每日/发布前 | < 1小时 |
+
+### 6.2 测试覆盖率要求（MUST）
+
+| 项目类型 | 最低覆盖率 | 关键路径要求 |
+|----------|------------|--------------|
+| 新服务 | >= 80% | >= 90% |
+| 现有服务 | >= 70% | >= 85% |
+| 工具脚本 | >= 60% | N/A |
+| 基础设施代码 | >= 50% | N/A |
+
+### 6.3 测试编写规范（MUST）
+
+```java
+// ✓ 正确的单元测试示例
+@DisplayName("订单服务 - 创建订单 - 成功场景")
+@Test
+void createOrder_Success_ReturnsOrderId() {
+    // Given
+    CreateOrderRequest request = CreateOrderRequest.builder()
+        .userId("user123")
+        .productId("prod456")
+        .quantity(1)
+        .build();
+
+    when(productClient.checkStock("prod456")).thenReturn(true);
+    when(inventoryService.deduct("prod456", 1)).thenReturn(true);
+
+    // When
+    String orderId = orderService.createOrder(request);
+
+    // Then
+    assertThat(orderId).isNotNull();
+    verify(orderRepository).save(argThat(order ->
+        order.getUserId().equals("user123") &&
+        order.getStatus() == OrderStatus.PENDING
+    ));
+}
+
+// ✗ 错误示例
+@Test
+void testOrder() {
+    orderService.createOrder(null);  // 无Given-When-Then结构
+    assertTrue(true);  // 无意义的断言
+}
+```
+
+> **相关文档**：详见《流程与规范手册.md》第6章"测试治理"章节，本规范定义测试编写规范（Builder模式、覆盖率要求）和测试数据管理策略。
+
+### 6.4 测试数据管理（SHOULD）
+
+| 策略 | 说明 | 适用场景 |
+|------|------|----------|
+| Builder模式 | 代码构建测试数据 | 单元测试 |
+| Fixture文件 | JSON/YAML文件 | 集成测试 |
+| 测试工厂 | 统一数据创建 | 大型测试套件 |
+| Mock数据 | 服务Mock | 外部依赖 |
+
+### 6.5 性能测试规范（SHOULD）
+
+| 测试类型 | 频率 | 阈值标准 |
+|----------|------|----------|
+| 基准测试 | 每周 | P50 < 100ms |
+| 压力测试 | 每次发布前 | P95 < 500ms, QPS > 1000 |
+| 耐久测试 | 每季度 | 找出系统极限 |
+| 稳定性测试 | 每半年 | 稳定性验证 |
+
+> **相关文档**：详见《流程与规范手册.md》第15章"效能度量"章节，本规范定义性能测试的指标要求和测试流程。
+
+验证方式：测试报告/覆盖率报告/CI配置
+
+---
+## 7. 安全与合规
+---
+
+### 7.1 数据分级（MUST）
+
+| 级别 | 定义 | 示例 | 存储要求 | 传输要求 | 日志要求 |
+|----------|----------|----------|----------|----------|
+| **公开** | 可公开信息 | 产品名称 | 标准 | HTTP | 可记录 |
+| **内部** | 仅内部使用 | 内部文档 | 标准 | HTTPS | 可记录 |
+| **敏感** | 敏感业务数据 | 用户手机号 | 加密 | TLS 1.3 | 脱敏 |
+| **受限** | 高敏感数据 | 身份证号 | 加密+HSM | TLS 1.3+签名 | 禁止 |
+
+> **相关文档**：详见《流程与规范手册.md》第7章"安全与合规"章节，本规范定义数据分级、密钥管理和合规要求。
+
+### 7.2 密钥管理（MUST）
+
+```
+密钥生命周期：
+生成 → 存储 → 轮换 → 销毁
+  ↓      ↓      ↓      ↓
+ HSM   Vault  自动   审计
+```
+
+| 密钥类型 | 轮换周期 | 存储位置 |
+|----------|----------|----------|
+| API密钥 | 90天 | Vault/KMS |
+| 数据库密码 | 180天 | Vault |
+| 证书 | 1年 | Cert管理平台 |
+| 签名密钥 | 2年 | HSM |
+
+### 7.3 安全培训（MUST）
+
+| 角色 | 培训内容 | 频率 | 核心要求 |
+|------|----------|----------|----------|
+| 全员 | 安全意识 | 每年 | 通过考试 |
+| 开发者 | 安全编码 | 每季度 | 通过考试 |
+| 架构师 | 威胁建模 | 每半年 | 实战演练 |
+
+> **相关文档**：详见《流程与规范手册.md》第15章"效能度量"章节，本规范定义安全培训的要求和记录。
+
+### 7.4 漏洞管理（MUST）
+
+| 严重级别 | 修复SLA | 示例 |
+|----------|---------|------|
+| 严重 | 48小时 | RCE、SQL注入 |
+| 高危 | 7天 | XSS、认证绕过 |
+| 中危 | 30天 | 信息泄露 |
+| 低危 | 90天 | 版本披露 |
+
+> **相关文档**：详见《流程与规范手册.md》第12章"依赖与供应链安全"章节，本规范定义漏洞管理流程和修复SLA。
+
+### 7.5 合规要求（MUST）
+
+| 法规/标准 | 要求 | 验证方式 |
+|-----------|------|----------|
+| GDPR | 数据可移植/删除/更正 | 隐合评估 | 第三方评估 |
+| 等保2.0 | 三级以上要求 | 第三方评估 |
+| SOC2 | 安全/可用/保密/隐私 | 年度审计 | 内部审计 |
+| ISO27001 | ISMS体系 | 年度审核 |
+
+> **相关文档**：详见《流程与规范手册.md》第12章"依赖与供应链安全"章节，本规范定义合规审计和证书管理要求。
+
+验证方式：安全审计日志/合规报告/培训记录
+
+---
+## 8. 可观测性
+---
+
+### 8.1 日志规范（MUST）
+
+#### 8.1.1 日志级别
+
+| 级别 | 用途 | 示例 |
+|------|------|------|
+| ERROR | 错误需要处理 | 支付失败、异常抛出 |
+| WARN | 警告但可继续 | 重试成功、降级生效 |
+| INFO | 关键业务事件 | 订单创建、用户登录 |
+| DEBUG | 调试信息 | 请求参数、中间状态 |
+| TRACE | 详细追踪 | 方法调用、SQL语句 |
+
+#### 8.1.2 日志Schema（MUST）
+
+```json
+{
+  "timestamp": "2026-03-19T10:30:45.123Z",
+  "level": "INFO",
+  "service": "order-service",
+  "traceId": "abc123def456",
+  "spanId": "789xyz",
+  "userId": "user123",
+  "eventType": "order.created",
+  "message": "订单创建成功",
+  "data": {
+    "orderId": "ORD-2026-001",
+    "amount": 99.99,
+    "currency": "CNY"
+  },
+  "tags": ["production", "payment"]
+}
+```
+
+#### 8.1.3 日志禁令（MUST）
+
+```
+禁止记录：
+✗ 密码/密钥/Token
+✗ 完整身份证号
+✗ 敏感个人信息（明文）
+✗ 完整请求体/响应体（生产）
+```
+
+### 8.2 链路追踪（MUST）
+
+| 要求 | 规范 |
+|------|------|
+| 透传格式 | W3C Trace Context |
+| 采样率 | 开发100%，生产1-10% |
+| Span命名 | {service}.{operation} |
+| 关键注解 | client/server、error、http.status_code |
+
+> **相关文档**：详见《流程与规范手册.md》第15章"效能度量"章节，本规范定义链路追踪的格式和集成要求（Jaeger/Loki）。
+
+### 8.3 指标规范（MUST）
+
+#### 8.3.1 指标命名（Prometheus风格）
+
+```prometheus
+# Counter - 单调递增
+http_requests_total{method="POST",endpoint="/api/orders",status="200"}
+
+# Gauge - 可增可减
+http_requests_active{service="order-service"}
+
+# Histogram - 分布
+http_request_duration_seconds{service="order-service"}
+
+# Summary - 统计
+api_response_time_seconds{quantile="0.99"}
+```
+
+#### 8.3.2 核心指标（MUST）
+
+| 类别 | 指标 | 标签 | 目标值 |
+|------|------|------|----------|
+| 流量 | requests_total | method, endpoint, status |
+| 延迟 | request_duration_seconds | service, endpoint |
+| 错误 | errors_total | service, error_type |
+| 饱和 | thread_pool_active | service, pool_name |
+
+### 8.4 告警规范（MUST）
+
+#### 8.4.1 告警级别
+
+| 级别 | 响应时间 | 示例 |
+|------|----------|----------|
+| P0-严重 | 15分钟 | 服务全部不可用 |
+| P1-高 | 30分钟 | 核心功能受影响 |
+| P2-中 | 2小时 | 局部功能异常 |
+| P3-低 | 1工作日 | 性能下降 |
+
+> **相关文档**：详见《流程与规范手册.md》第15章"效能度量"章节，本规范定义告警级别、响应时间要求和告警配置。
+
+#### 8.4.2 告警规则示例
+
+```yaml
+# Prometheus告警规则
+groups:
+  - name: service_alerts
+    rules:
+      # 服务可用性
+      - alert: ServiceDown
+        expr: up{job="api-gateway"} == 0
+        for: 1m
+        labels:
+          severity: P0
+          team: platform
+        annotations:
+          summary: "服务 {{ $labels.job }} 不可用"
+          description: "{{ $labels.job }} 已宕机超过1分钟"
+
+      # 高错误率
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) /
+          sum(rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: P1
+        annotations:
+          summary: "服务 {{ $labels.service }} 错误率过高"
+          description: "服务 {{ $labels.service }} 错误率 {{ $value | humanizePercentage }}，持续5分钟"
+
+      # 数据库连接池
+      - alert: DatabasePoolExhausted
+        expr: |
+          hikari_pool_active_connections / hikari_pool_max_connections > 0.9
+        for: 2m
+        labels:
+          severity: P1
+        annotations:
+          summary: "数据库连接池接近耗尽"
+          description: "连接池使用率 {{ $value | humanizePercentage }}"
+```
+
+> **相关文档**：详见《流程与规范手册.md》第8章"可观测性"章节，本规范定义日志、监控和告警的格式和要求。
+
+---
+## 9. SLA/SLO管理
+---
+
+### 9.1 SLA定义模板（MUST）
+
+```yaml
+# Service Level Agreement - 订单服务
+service: order-service
+version: "1.0"
+effective: 2026-03-19
+
+# 服务承诺
+commitments:
+  availability:
+    target: 99.9%
+    calculation: (total_time - downtime) / total_time
+    measurement: "每月"
+    exclusion:
+      - 计划维护窗口（提前7天通知）
+
+  latency:
+    target:
+      p50: < 100ms
+      p95: < 500ms
+      p99: < 1000ms
+    measurement: "每日"
+
+  correctness:
+    target: 99.99%
+    definition: "成功请求 / 总请求"
+
+# 违约处理
+penalty:
+  availability_below_99.9: "服务抵扣"
+  availability_below_99.9: "全额退款 + SLA罚款"
+```
+
+### 9.2 SLO定义示例（MUST）
+
+```yaml
+# Service Level Objectives
+objectives:
+  - name: request_availability
+    description: "请求成功率"
+    target: 0.999
+    expr: |
+      sum(rate(http_requests_total{status!~"5.."}[5m])) /
+      sum(rate(http_requests_total[5m]))
+
+  - name: request_latency
+    description: "请求延迟P99"
+    target: 1.0  # 秒
+    expr: |
+      histogram_quantile(0.99,
+        sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+      )
+
+  - name: freshness
+    description: "数据新鲜度"
+    target: 300  # 秒
+    expr: time() - max(data_last_updated_seconds)
+```
+
+### 9.3 错误预算管理（MUST）
+
+```
+错误预算 = (1 - SLO) × 时间周期
+
+示例：SLO = 99.9%
+月度错误预算 = 0.1% × 30天 × 24小时 × 3600秒 = 259,200秒 ≈ 43.2分钟
+```
+
+| 预算状态 | 行动 |
+|----------|------|
+| > 50% | 正常发布 |
+| 10-50% | 风险发布，需审批 |
+| < 10% | 暂停发布，专注稳定 |
+| 耗尽 | 仅紧急修复 |
+
+> **相关文档**：详见《流程与规范手册.md》第9章"发布策略"章节，本规范定义SLA/SLO、错误预算和监控看板要求。
+
+### 9.4 SLI定义（MUST）
+
+| 维度 | SLI | 测量方式 | 计算公式 | 目标值 |
+|------|------|----------|--------|----------|
+| 可用性 | 成功请求比率 | 成功请求数 / 总请求数 | >= 99.9% |
+| 延迟 | 请求耗时 | P50/P95/P99 | P50 < 100ms, P95 < 500ms, P99 < 1000ms |
+| 正确性 | 数据准确性 | 一致性检查结果 | >= 99.99% |
+| 数据新鲜度 | 数据延迟 | 当前时间 - 数据时间 | < 300秒 |
+| 饱和 | 资源使用率 | CPU/内存/连接数 | < 80% |
+
+> **相关文档**：详见《流程与规范手册.md》第8章"可观测性"章节，本规范定义SLI的计算公式和监控看板配置。
+
+### 9.5 错误预算报告（MUST）
+
+| 月份 | 错误率 | 目标 | 状态 |
+|----------|------|--------|
+| 2026-03 | 0.08% | 0.1% | ✅ 正常 |
+| 2026-04 | 0.15% | 0.1% | ✅ 正常 |
+| 2026-05 | 0.25% | 0.1% | ⚠️ 接近 |
+
+> **相关文档**：详见《流程与规范手册.md》第15章"效能度量"章节，本规范定义错误预算计算和报告模板。
+
+---
+## 10. 事故管理
+---
+
+### 10.1 事故分级（MUST）
+
+| 级别 | 定义 | 响应SLA | 修复SLA | 影响 |
+|------|----------|---------|---------|
+| **P0** | 生产全局不可用/核心交易全量失败 | 15分钟 | 2小时缓解 |
+| **P1** | 关键功能大面积受影响 | 30分钟 | 4小时缓解 |
+| **P2** | 局部功能受影响/有替代方案 | 2小时 | 24小时修复 |
+| **P3** | 低影响/无用户感知 | 1工作日 | 3工作日 |
+
+### 10.2 事故响应流程（MUST）
+
+```
+检测 → 分级 → 响应 → 缓解 → 恢复 → 复盘
+  ↓      ↓      ↓      ↓      ↓
+告警   On-call  隔离   修复   验证   RCA
+```
+
+### 10.3 RCA模板（MUST）
+
+P0/P1事故必须在恢复后48小时内完成RCA，由事故指挥指定RCA负责人，经技术负责人审批。
+
+RCA必须包含：基本信息、时间线、根本原因分析、影响评估、修复措施（立即/短期/长期）、行动项追踪表。
+
+> **模板/详细流程**：参见《流程与规范手册.md》第5.3节"RCA输出模板"。该节提供完整的RCA模板、5 Whys分析法和鱼骨图方法论，以及RCA质量检查标准。
+
+### 10.4 事故指挥体系（MUST）
+
+| 角色 | 职责 |
+|------|------|
+| **事故指挥** | 统筹决策，对外沟通 |
+| **通讯负责人** | 更新状态页面，通知用户 |
+| **技术负责人** | 技术分析，执行修复 |
+| **记录员** | 记录时间线，整理RCA |
+
+> **相关文档**：详见《流程与规范手册.md》第10章"事故管理"章节，本规范定义事故响应流程和RCA模板要求。
+
+---
+## 11. 架构治理
+---
+
+### 11.1 架构评审（MUST）
+
+| 触发条件 | 要求 |
+|----------|------|
+| 新服务创建 | 必须通过架构评审 |
+| 跨服务重大变更 | 必须通过架构评审 |
+| 技术栈变更 | 必须通过架构评审 |
+| 数据架构变更 | 必须通过架构评审 |
+
+> **相关文档**：详见《工程治理与流程规范.txt》第2章"研发流程"章节，本规范定义架构评审的触发条件和CAB成员构成。
+
+### 11.2 技术债务管理（MUST）
+
+```
+技术债务分类：
+├── 无意债务：因知识不足产生 → 柹训/文档
+├── 故意债务：时间换空间 → 计划偿还
+└── 战略债务：快速迭代 → 商业决策后处理
+```
+
+| 级别 | 行动 |
+|------|------|
+| 严重 | 2个Sprint内偿还 |
+| 高 | 1季度内偿还 |
+| 中 | 半年内偿还 |
+| 低 | 记录，待定 |
+
+> **相关文档**：详见《流程与规范手册.md》第15章"效能度量"章节，本规范定义技术债务的追踪和度量。
+
+### 11.3 架构原则（MUST）
+
+| 原则 | 说明 |
+|------|------|
+| **服务自治** | 服务独立部署、独立升级 |
+| **无状态** | 业务状态外部化 |
+| **弹性设计** | 优雅降级、熔断隔离 |
+| **可观测** | 内置监控、日志、追踪 |
+| **安全左移** | 安全设计始于架构 |
+
+> **相关文档**：详见《前端规范.txt》第12章"工程化规范"章节，本规范要求架构设计遵循服务和自治原则。
+
+### 11.4 评审检查清单
+
+```markdown
+## 架构评审检查清单
+
+### 功能性
+- [ ] 需求覆盖完整
+- [ ] 容量规划合理
+- [ ] 扩展性考虑充分
+
+### 非功能性
+- [ ] 可用性目标 (SLA)
+- [ ] 性能目标 (延迟/QPS)
+- [ ] 安全要求
+- [ ] 合规要求
+
+### 技术选型
+- [ ] 技术栈一致性
+- [ ] 团队能力匹配
+- [ ] 社区活跃度
+- [ ] 成本评估
+
+### 运维友好
+- [ ] 可部署
+- [ ] 可监控
+- [ ] 可调试
+- [ ] 可回滚
+```
+
+> **相关文档**：详见《流程与规范手册.md》第19章"模板与附录"章节，本规范提供评审检查清单和ADR模板。
+
+---
+## 12. 依赖与供应链安全
+---
+
+### 12.1 依赖管理规范（MUST）
+
+| 要求 | 规范 |
+|------|------|
+| **来源控制** | 仅使用官方仓库（Maven Central/npm.org） |
+| **版本固定** | 生产环境锁定具体版本 |
+| **许可证检查** | 禁止Copyleft/GPL传染性许可证 |
+| **定期更新** | 每月安全更新，每季度功能更新 |
+
+> **相关文档**：详见《流程与规范手册.md》第4章"CI/CD流水线"章节，本规范定义依赖更新的自动化和检查要求。
+
+### 12.2 依赖扫描（MUST）
+
+```yaml
+# 依赖扫描配置
+dependency-check:
+  # 允许的许可证
+  allowed-licenses:
+    - Apache-2.0
+    - MIT
+    - BSD-2-Clause
+    - BSD-3-Clause
+    - ISC
+
+  # 禁止的许可证
+  denied-licenses:
+    - GPL-2.0
+    - GPL-3.0
+    - AGPL-3.0
+
+  # 严重漏洞策略
+  vulnerability-policy:
+    critical: block
+    high: block
+    medium: warn
+    low: allow
+```
+
+### 12.3 SBOM生成（MUST）
+
+```bash
+# 生成SBOM（CycloneDX格式）
+mvn org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom
+
+# 或使用Syft
+syft packages . -o cyclonedx-json > sbom.json
+```
+
+> **相关文档**：详见《流程与规范手册.md》第12章"依赖与供应链安全"章节，本规范定义SBOM生成和许可证审查流程。
+
+### 12.4 供应链安全（MUST）
+
+| 实践 | 要求 |
+|------|------|
+| **签名验证** | 容器镜像/构建产物必须签名 |
+| **来源证明** | 使用SLSA Provenance |
+| **最小基础** | 使用distroless/scratch镜像 |
+| **扫描检查** | 镜像构建后立即扫描 |
+
+> **相关文档**：详见《流程与规范手册.md》第12章"依赖与供应链安全"章节，本规范定义Docker安全实践和供应链要求。
+
+---
+## 13. 文档规范
+---
+
+### 13.1 README规范（MUST）
+
+每个项目必须包含README.md，包含以下章节：
+
+```markdown
+# 项目名称
+
+## 概述
+[项目简介，1-2段话]
+
+## 快速开始
+\`\`\`bash
+git clone <repo>
+cd <project>
+./start.sh
+\`\`\`
+
+## 目录结构
+\`\`\`
+.
+├── src/          # 源代码
+├── tests/        # 测试
+└── docs/         # 文档
+\`\`\`
+
+## 开发指南
+- 环境要求
+- 构建命令
+- 测试命令
+
+## 部署指南
+- 部署步骤
+- 配置说明
+
+## 运维手册
+- 健康检查
+- 常见问题
+
+## 贡献指南
+- PR流程
+- 代码规范
+
+## 许可证
+[许可证类型]
+
+## 联系方式
+- 维护者
+- 问题反馈
+```
+
+### 13.2 API文档规范（MUST）
+
+| 要求 | 规范 |
+|------|------|
+| **格式** | OpenAPI 3.0 |
+| **托管** | 集中式文档站点 |
+| **同步** | 代码与文档自动同步 |
+| **示例** | 每个接口包含请求/响应示例 |
+
+```yaml
+# OpenAPI示例
+openapi: 3.0.0
+info:
+  title: 订单服务API
+  version: "1.0.0"
+  description: |
+    订单管理相关接口
+
+    ## 认证
+    所有接口需要Bearer Token认证
+
+paths:
+  /api/orders:
+    post:
+      summary: 创建订单
+      tags:
+        - 订单
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+            example:
+              userId: "user123"
+              productId: "prod456"
+              quantity: 1
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+```
+
+> **相关文档**：详见《流程与规范手册.md》第13章"文档规范"章节，本规范定义API文档的格式和托管要求。
+
+### 13.3 运维手册规范（SHOULD）
+
+```markdown
+# Runbook - 订单服务
+
+## 健康检查
+\`\`\`bash
+curl http://localhost:8080/actuator/health
+\`\`\`
+
+## 常见问题
+
+### 问题1: 订单创建失败
+症状: API返回500错误
+排查步骤:
+1. 检查数据库连接
+2. 检查库存服务
+3. 查看应用日志
+
+解决方案: [具体步骤]
+
+## 回滚步骤
+\`\`\`bash
+kubectl rollout undo deployment/order-service
+\`\`\`
+
+## 扩容步骤
+\`\`\`bash
+kubectl scale deployment/order-service --replicas=10
+\`\`\`
+```
+
+> **相关文档**：详见《流程与规范手册.md》第13章"文档规范"章节，本规范提供健康检查、常见问题和扩容步骤示例。
+
+---
+## 14. 代码库治理
+---
+
+### 14.1 仓库结构规范（MUST）
+
+```
+项目根目录
+├── .github/              # GitHub配置
+│   ├── workflows/        # CI/CD
+│   ├── ISSUE_TEMPLATE/   # Issue模板
+│   └── PULL_REQUEST_TEMPLATE.md
+├── src/                  # 源代码
+├── tests/                # 测试代码
+├── docs/                 # 文档
+├── scripts/              # 脚本
+├── config/               # 配置文件
+├── build/                # 构建文件
+├── deployments/          # 部署文件
+├── CHANGELOG.md          # 变更日志
+├── CODEOWNERS            # 代码所有权
+├── CONTRIBUTING.md       # 贡献指南
+├── LICENSE               # 许可证
+├── README.md             # 项目说明
+├── .gitignore            # Git忽略
+├── .editorconfig         # 编辑器配置
+└── .gitattributes        # Git属性
+```
+
+### 14.2 分支管理策略（MUST）
+
+#### 14.2.1 推荐：Trunk-Based Development
+
+```
+main (生产)
+  ↑
+  │ 持续集成
+  │
+feature/xxx (短期分支，< 1天)
+```
+
+#### 14.2.2 备选：GitFlow
+
+```
+main (生产) ────────> release/x.x.x ─────> tag vx.x.x
+  ↑                                              ↑
+hotfix/xxx                                    develop
+  ↓                                              ↓
+                                              feature/xxx
+```
+
+> **相关文档**：详见《流程与规范手册.md》第17章"发布策略"章节，本规范定义分支策略和Tag格式。
+
+### 14.3 CHANGELOG规范（MUST）
+
+```markdown
+# Changelog
+
+## [1.2.0] - 2026-03-19
+
+### Added
+- 新增订单导出功能
+- 新增批量操作API
+
+### Changed
+- 优化查询性能
+- 更新依赖版本
+
+### Fixed
+- 修复支付回调问题
+- 修复库存扣减bug
+
+### Deprecated
+- 废弃旧版API v1
+
+### Removed
+- 移除未使用的依赖
+
+### Security
+- 升级spring-boot修复CVE
+```
+
+> **相关文档**：详见《流程与规范手册.md》第19章"模板与附录"章节，本规范定义变更日志的格式和版本发布要求。
+
+### 14.5 代码冻结规范（MUST）
+
+| 冻结类型 | 规则 | 解冻条件 |
+|----------|----------|----------|
+| **节日冻结** | 大型节日前后7天 | 过期 |
+| **重大事件** | 特定活动期间 | 活动结束+观察期 |
+| **审核冻结** | 审核期间 | 审核通过 |
+
+代码冻结期间仅允许：
+- P0紧急修复
+- 安全漏洞修复
+
+> **相关文档**：详见《流程与规范手册.md》第17章"发布策略"章节，本规范定义代码冻结的条件和流程。
+
+---
+## 15. 效能度量
+---
+
+### 15.1 DORA指标（MUST）
+
+| 指标 | 精英表现 | 表现良好 | 需改进 |
+|------|----------|----------|--------|
+| **部署频率** | 按需 | 每天 | 每月 |
+| **变更前置时间** | < 1小时 | < 1天 | < 1周 |
+| **服务恢复时间** | < 1小时 | < 1天 | < 1周 |
+| **变更失败率** | < 15% | < 30% | > 30% |
+
+> **相关文档**：本节定义DORA指标的标准阈值（WHAT）。关于DORA指标的测量流程、数据采集方式和持续改进机制（HOW），参见《流程与规范手册.md》第10.1节"DORA指标"。
+
+### 15.2 工程效能指标（SHOULD）
+
+| 类别 | 指标 | 目标值 |
+|------|------|--------|
+| **速度** | Code Review周期 | < 4小时 |
+| | PR合并到部署 | < 1天 |
+| **质量** | 代码缺陷率 | < 5个/千行 |
+| | 线上逃逸率 | < 10% |
+| **稳定性** | 事故次数 | < 1次/月 |
+| | 平均恢复时间 | < 1小时 |
+
+> **相关文档**：详见《流程与规范手册.md》第15章"效能度量"章节，本规范定义效能度量的计算公式和Dashboard配置。
+
+### 15.3 度量看板配置
+
+```yaml
+# Grafana Dashboard配置
+dashboard:
+  title: "Engineering Productivity"
+  panels:
+    - title: "Deployment Frequency"
+      query: |
+        count(increases(deployments_total[7d]))
+    - title: "Lead Time"
+      query: |
+        avg(time_to_deploy)
+    - title: "Change Failure Rate"
+      query: |
+        sum(failed_deploys) / sum(total_deploys)
+    - title: "MTTR"
+      query: |
+        avg(incident_resolution_duration)
+```
+
+> **相关文档**：详见《流程与规范手册.md》第8章"可观测性"章节，本规范定义度量看板的配置和图表要求。
+
+---
+## 16. 自动化检查
+---
+
+### 16.1 必需检查项（MUST）
+
+| 工具 | 规则 | 作用 |
+|------|------|------|
+| EditorConfig | indent/charset | 统一编码风格 |
+| markdownlint | MD001/MD003/MD004... | Markdown规范 |
+| yamllint | truthy/indentation | YAML规范 |
+| jsonlint | valid-json | JSON有效性 |
+| Shellcheck | SC1090/SC2001... | Shell脚本 |
+| Hadolint | DL3002/DL3003... | Dockerfile |
+| SQLFluff | L001/L003... | SQL规范 |
+
+> **相关文档**：详见《流程与规范手册.md》第16章"自动化检查"章节，本规范定义各类Lint工具的配置规则。
+
+### 16.2 重复代码检测（MUST）
+
+```yaml
+# jscpd配置
+jscpd:
+  threshold: 80      # 相似度阈值
+  minLines: 10       # 最小行数
+  minTokens: 50      # 最小token数
+  reporters:
+    - html
+    - console
+  ignore:
+    - "**/node_modules/**"
+    - "**/test/**"
+```
+
+> **相关文档**：详见《流程与规范手册.md》第14章"代码库治理"章节，本规范定义重复代码检测的配置和阈值。
+
+### 16.3 配置文件示例
+
+```ini
+# .editorconfig
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.java]
+indent_size = 4
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[Makefile]
+indent_style = tab
+```
+
+```yaml
+# .markdownlint.json
+{
+  "default": true,
+  "MD013": { "line_length": 120 },
+  "MD033": false,
+  "MD041": false
+}
+```
+
+```yaml
+# .yamllint
+extends: default
+rules:
+  line-length:
+    max: 120
+  indentation:
+    spaces: 2
+  comments:
+    min-spaces-from-content: 1
+```
+
+> **相关文档**：详见《流程与规范手册.md》第16章"自动化检查"章节，本规范定义各类配置文件的格式和规则。
+
+---
+## 17. 发布策略
+---
+
+### 17.1 发布策略选择（MUST）
+
+| 策略 | 适用场景 | 回滚难度 | 风险 |
+|------|----------|----------|--------|------|--------|
+| **蓝绿部署** | 版本切换 | 低 | 中 |
+| **金丝雀发布** | 渐进式验证 | 低 | 中 |
+| **灰度发布** | 用户分批 | 中 | 中 |
+| **滚动发布** | 无状态服务 | 低 | 中 |
+
+> **相关文档**：详见《流程与规范手册.md》第17章"发布策略"章节，本规范定义不同发布策略的选择标准。
+
+### 17.2 金丝雀发布配置
+
+```yaml
+# Istio金丝雀配置示例
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: order-service
+spec:
+  http:
+  - match:
+    - headers:
+        canary:
+          exact: "true"
+    route:
+    - destination:
+        host: order-service
+        subset: v2  # 新版本
+      weight: 100
+    - route:
+    - destination:
+        host: order-service
+        subset: v1  # 旧版本
+      weight: 90
+    - destination:
+        host: order-service
+        subset: v2  # 新版本
+      weight: 10   # 10%流量
+```
+
+> **相关文档**：详见《流程与规范手册.md》第17章"发布策略"章节，本规范定义金丝雀配置的格式和流量权重设置。
+
+### 17.3 发布检查清单（MUST）
+
+发布前必须完成：测试通过、代码审查完成、安全扫描无高危、性能测试通过、依赖更新记录、数据库迁移准备、回滚方案确认、监控告警配置、On-call通知。发布后须验证健康检查、关键指标、错误率、用户反馈。
+
+> **模板/详细流程**：参见《流程与规范手册.md》第8.5节"部署检查清单"。该节提供完整的发布前检查、发布步骤（含灰度放行流程）、发布后验证和回滚计划模板。
+
+### 17.4 回滚策略（MUST）
+
+| 回滚类型 | 触发条件 | 操作 |
+|----------|----------|----------|------|
+| **即时回滚** | 错误率>50% | 自动回滚 |
+| **手动回滚** | 业务发现 | 运维执行 |
+| **配置回滚** | 配置问题 | 配置中心 |
+| **数据回滚** | 数据异常 | 数据库恢复 |
+
+回滚时间目标（RTO）：< 10分钟
+
+> **相关文档**：详见《流程与规范手册.md》第10章"事故管理"章节，本规范定义回滚策略和时间目标。
+
+---
+## 18. 工具链规范
+---
+
+### 18.1 CI/CD工具（MUST）
+
+| 工具 | 用途 | 推荐度 |
+|------|------|--------|
+| **GitHub Actions** | CI/CD | 推荐 |
+| **Jenkins** | CI/CD | 可选 |
+| **GitLab CI** | CI/CD | 可选 |
+| **GitLab CI** | CI/CD | 可选 |
+
+> **相关文档**：详见《流程与规范手册.md》第4章"CI/CD流水线"章节，本规范定义CI工具的选型和使用规范。
+
+### 18.2 监控工具（MUST）
+
+| 工具 | 用途 | 推荐度 |
+|------|------|--------|
+| **Prometheus** | 指标采集 | 推荐 |
+| **Grafana** | 可视化 | 推荐 |
+| **Jaeger** | 链路追踪 | 推荐 |
+| **Loki** | 日志聚合 | 可选 |
+
+> **相关文档**：详见《流程与规范手册.md》第8章"可观测性"章节，本规范定义监控工具的集成和配置要求。
+
+### 18.3 安全工具（MUST）
+
+| 工具 | 用途 | 推荐度 |
+|------|------|--------|
+| **Trivy** | 镜像扫描 | 推荐 |
+| **Gitleaks** | 密钥检测 | 推荐 |
+| **Syft** | SBOM生成 | 推荐 |
+| **gitleaks** | 密钥检测 | 推荐 |
+
+> **相关文档**：详见《流程与规范手册.md》第12章"依赖与供应链安全"章节，本规范定义安全工具的使用和集成流程。
+
+### 18.4 工单系统（SHOULD）
+
+| 工具 | 用途 | 推荐度 |
+|------|------|--------|
+| **Jira** | 问题跟踪 | 推荐 |
+| **ServiceNow** | 服务管理 | 可选 |
+| **PagerDuty** | On-call | 推荐 |
+
+> **相关文档**：详见《流程与规范手册.md》第10章"事故管理"章节，本规范定义工单系统的使用和事故处理流程。
+
+---
+## 19. 模板与附录
+---
+
+### 19.1 PR模板
+
+所有PR必须使用统一的PR模板，包含变更描述、变更类型、变更影响、测试情况、检查清单等必要字段。
+
+> **模板/详细流程**：参见《流程与规范手册.md》第8.1节"PR模板"。该节提供完整的PR模板（含Related Issue、变更影响、性能测试结果等字段），以及PR创建和审查的完整流程。
+
+### 19.2 ADR完整示例
+
+ADR（架构决策记录）用于记录重要的架构决策及其背景、影响和备选方案。核心字段包括：Status、Context、Decision、Consequences、Alternatives Considered、Implementation、Related。
+
+> **模板/详细流程**：参见《流程与规范手册.md》第8.2节"ADR模板"。该节提供完整的ADR模板结构（含Implementation计划、Related关联字段），本节仅保留模板字段概览。
+
+### 19.3 代码审查清单
+
+代码审查须覆盖以下六大维度：正确性、可维护性、测试、安全、性能、可观测性。每个维度的详细检查项及后端/前端专项问题清单，参见《流程与规范手册.md》第3.4节。
+
+> **模板/详细流程**：参见《流程与规范手册.md》第3.4节"审查检查清单"及第3.5-3.6节"后端/前端代码审查问题清单"。本规范第2.3节定义评审机制（SLA、人数、关键路径）。
+
+### 19.4 CODEOWNERS示例
+
+```
+# 全局默认所有者
+# 所有的PR需要至少一个技术负责人审批
+* @tech-lead @architect
+
+# 关键路径需要安全团队审批
+**/payment/** @payment-team @security-team
+**/auth/** @auth-team @security-team
+**/user/** @user-team @privacy-team
+
+# 基础设施需要SRE审批
+**/docker/** @sre-team
+**/kubernetes/** @sre-team
+**/terraform/** @sre-team
+
+# 特定文件
+**/production.yml @sre-team
+**/CODEOWNERS @architect
+**/go.mod @tech-lead
+**/pom.xml @tech-lead
+
+# 团队目录
+api-gateway/** @gateway-team
+order-service/** @order-team
+payment-service/** @payment-team
+user-service/** @user-team
+
+# 文档
+docs/** @tech-lead
+**/README.md @tech-lead
+**/CHANGELOG.md @tech-lead
+
+# 配置文件
+**/.github/** @devops-team
+**/.gitignore @devops-team
+**/Makefile @devops-team
+
+# 忽略某些文件
+*.log @no-one
+**/vendor/** @no-one
+**/node_modules/** @no-one
+```
+
+> **相关文档**：详见《流程与规范手册.md》第3章"代码所有权"章节，本规范定义CODEOWNERS的格式和团队目录结构。
+
+### 19.5 发布配置示例
+
+```yaml
+# .github/workflows/release.yml
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          mvn clean package -DskipTests
+
+      - name: Build Docker image
+        run: |
+          docker build -t registry.company/app:${{ github.ref_name }} .
+          docker push registry.company/app:${{ github.ref_name }}
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Deploy to Production
+        run: |
+          kubectl set image deployment/app \
+            app=registry.company/app:${{ github.ref_name }}
+```
+
+### 19.6 监控配置示例
+
+监控告警配置（Prometheus规则、告警级别定义、指标命名规范）已在本规范第8.4节"告警规范"中统一定义，包含ServiceDown、HighErrorRate、DatabasePoolExhausted等核心告警规则的完整YAML配置。
+
+> **模板/详细流程**：参见本规范第8.4节"告警规范"获取完整的Prometheus告警规则配置示例。
+
+### 19.7 术语表（完整版）
+
+| 中文 | 英文 | 缩写 | 定义 |
+|----------|----------|----------|------|
+| 代码审查 | Code Review | CR | 对代码变更进行的系统性检查 |
+| 审查清单 | Review Checklist | CR | 代码审查时使用的检查项列表 |
+| 回滚 | Rollback | RB | 将系统恢复到之前版本的操作 |
+| 变更 | Change | C | 对系统进行的任何修改 |
+| 发布 | Release | R | 将变更部署到生产环境 |
+| 事故 | Incident | I | 服务中断或质量下降的事件 |
+| 服务水平协议 | Service Level Agreement | SLA | 服务商与客户间的承诺 |
+| 服务水平目标 | Service Level Objective | SLO | 具体的可度量指标 |
+| 服务水平指标 | Service Level Indicator | SLI | 测量SLO的数据点 |
+| 个人身份信息 | Personal Identifiable Information | PII | 可识别个人的信息 |
+| 架构决策记录 | Architecture Decision Record | ADR | 架构决策的文档记录 |
+| 根因分析 | Root Cause Analysis | RCA | 事故根本原因分析 |
+| 变更咨询委员会 | Change Advisory Board | CAB | 变更咨询委员会 |
+| 软件物料清单 | Software Bill of Materials | SBOM | 软件组件清单 |
+| 开发运维研究和评估 | DevOps Research and Assessment | DORA | DevOps研究和评估组织 |
+| 密钥管理 | Key Management | KM | 密钥的生命周期管理 |
+| 依赖扫描 | Dependency Scan | DS | 依赖包的安全漏洞扫描 |
+| 供应链安全 | Supply Chain Security | SCS | 软件供应链安全管理 |
+| 工具链 | Tool Chain | TC | CI/CD、监控、安全等工具链路集成 |
+
+> **相关文档**：详见《流程与规范手册.md》第19章"模板与附录"章节，本规范提供术语表的完整定义和跨文档索引。
+
+---
+**文档结束** | **End of Document**
+
+如有疑问或建议，请联系架构委员会：164112436@qq.com

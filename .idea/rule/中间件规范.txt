@@ -1,0 +1,1165 @@
+# 中间件搭配使用规范
+# Middleware Integration & Usage Standards
+
+================================================================================
+文档元数据 | Document Metadata
+================================================================================
+版本号 | Version:        v2.0.1
+发布日期 | Release Date:  2025-01-15
+最后修订 | Last Revised: 2026-03-29
+生效日期 | Effective Date: 2025-01-15
+所有者 | Owner:         架构委员会
+维护者 | Maintainer:    基础设施团队
+评审人 | Reviewers:     技术架构组 / 运维组 / 安全组
+下次复审 | Next Review:   2026-01-15（年度复审）
+
+变更历史 | Change History:
+| 版本 | 日期       | 变更说明                           | 变更人 |
+|------|------------|-----------------------------------|--------|
+| v2.0 | 2025-01-15 | 完整重构：补充元数据、分级、示例    | 架构组 |
+| v1.0 | 2024-xx-xx | 初始版本                          | -      |
+
+引用标准 | Referenced Standards:
+- ISO/IEC 27001:2022 信息安全管理体系
+- NIST SP 800-53 安全控制框架
+- OWASP Top 10 Web应用安全风险
+- CIS Controls v8
+- Google SRE Book (Site Reliability Engineering)
+
+变更流程 | Change Process:
+1. 提案：提交RFC或ADR说明变更原因
+2. 评审：架构委员会评审（至少2名LGTM）
+3. 公示：变更公示期7天
+4. 发布：更新版本号和变更历史
+5. 通知：发送邮件/Slack通知所有团队
+
+================================================================================
+0. 基本原则 | General Principles
+================================================================================
+0.1 规范分级说明 | Specification Levels
+- MUST（必须）：强制要求，违反将导致安全/稳定性风险
+- SHOULD（应该）：强烈推荐，例外需审批和文档记录
+- MAY（可以）：可选建议，根据场景自行决定
+- MUST NOT（禁止）：严格禁止，违反将触发违规处理
+
+0.2 适用范围 | Scope
+- 适用于本项目内所有服务端组件与基础设施对中间件的接入、配置、治理与联动使用
+- 适用于开发/测试/预发/生产等所有环境
+
+0.3 例外与豁免机制 | Exceptions & Waivers
+- 例外必须经Owner/架构委员会审批
+- 例外必须包含：原因/范围/风险/有效期/回滚方案/追踪编号
+- 例外到期必须复审或清理
+- 禁止无记录的口头例外
+- 验证方式：例外审批记录/RFC/ADR
+
+0.4 违规处理 | Violation Handling
+- MUST级别违规：立即修复，并提交RCA
+- SHOULD级别违规：5个工作日内修复或申请例外
+- MAY级别违规：建议采纳，无强制要求
+- 验证方式：违规跟踪系统/代码审查
+
+0.5 术语表 | Glossary
+
+| 中文术语 | 英文术语 | 定义 |
+|----------|----------|------|
+| 代码审查 | Code Review | 对代码变更的系统性检查，确保正确性/质量/合规 |
+| 审查清单 | Review Checklist | 代码审查时需要检查的项目列表 |
+| 回滚 | Rollback | 将系统恢复到之前稳定版本的操作 |
+| 幂等 | Idempotent | 同一操作执行多次与执行一次效果相同 |
+| 熔断 | Circuit Breaker | 故障检测后自动切断请求的保护机制 |
+| 降级 | Degradation | 牺牲非核心功能保证核心可用的策略 |
+| 热点Key | Hot Key | 访问频率远高于平均的缓存键 |
+| 雪崩 | Cache Avalanche | 大量缓存同时失效导致的数据库压力激增 |
+| 击穿 | Cache Penetration | 查询不存在的数据导致的数据库压力 |
+| 污染 | Cache Pollution | 无效数据占用缓存空间导致的性能下降 |
+| 追踪ID | TraceId | 分布式链路追踪的唯一标识符 |
+| 服务水平目标 | SLO | Service Level Objective，服务性能目标 |
+| 服务水平协议 | SLA | Service Level Agreement，服务承诺协议 |
+
+================================================================================
+1. 本项目已使用的中间件清单 | Middleware Inventory
+================================================================================
+1.1 核心中间件 | Core Middleware（已使用）
++-------------------+------------------+--------------------------------+
+| 类别              | 中间件           | 用途                           |
++-------------------+------------------+--------------------------------+
+| 注册与配置        | Nacos            | Discovery/Config               |
+| 网关              | Spring Cloud     | Gateway                        |
+|                   | Gateway          |                                |
+| 流量治理          | Sentinel         | 限流/熔断/降级                 |
+| RPC调用           | OpenFeign        | 服务间HTTP调用                 |
+| 弹性能力          | Resilience4j     | 熔断/限流/隔离补充             |
+| 缓存              | Redis            | 分布式缓存                     |
+| 分布式锁          | Redisson         | 基于Redis的分布式锁            |
+| 消息队列          | RocketMQ         | 异步消息/事务消息              |
+| 分布式事务        | Seata            | 分布式事务协调                 |
+| 关系型数据库      | MySQL            | 主数据存储                    |
+| 搜索              | Elasticsearch    | 全文检索/日志存储              |
+| 日志采集          | Logback+Logstash | 日志采集与结构化              |
+| 链路追踪          | Sleuth+Zipkin    | 分布式追踪                    |
+| 监控指标          | Micrometer+      | 指标采集与暴露                |
+|                   | Prometheus       |                                |
++-------------------+------------------+--------------------------------+
+
+1.2 备选中间件 | Alternative Middleware（未启用，供参考）
++-------------------+------------------+--------------------------------+
+| 类别              | 中间件           | 适用场景                       |
++-------------------+------------------+--------------------------------+
+| 消息队列          | Kafka            | 高吞吐日志/流式处理            |
+| 消息队列          | RabbitMQ         | 企业级消息/复杂路由            |
+| 注册发现          | Consul/Eureka    | 替代Nacos的方案               |
+| 配置中心          | Apollo           | 替代Nacos Config的方案        |
+| 对象存储          | MinIO/OSS/S3     | 文件/对象存储                  |
+| 调度              | XXL-Job/Quartz   | 任务调度                       |
+| 追踪              | Jaeger/SkyWalking| 替代Zipkin的方案              |
+| 流式计算          | Flink/Spark      | 实时计算                       |
++-------------------+------------------+--------------------------------+
+
+================================================================================
+2. 通用接入规范（MUST）| General Access Standards
+================================================================================
+2.1 配置管理 | Configuration Management
+MUST 2.1.01 中间件地址/账号/密钥来源
+- 所有敏感配置必须来自配置中心或环境变量
+- 禁止在代码中硬编码任何连接信息/密钥/Token
+- 生产环境配置不得使用默认值
+- 验证方式：Secrets扫描/配置审查
+
+```yaml
+# 正确示例 ✓
+spring:
+  datasource:
+    url: ${DB_URL}           # 来自环境变量
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+
+# 错误示例 ✗
+spring:
+  datasource:
+    url: jdbc:mysql://192.168.1.100:3306/shop  # 硬编码
+    username: root
+    password: Root@123456
+```
+
+MUST 2.1.02 配置变更审计
+- 所有配置变更必须记录：变更人/变更时间/变更内容/变更原因
+- 配置必须支持回滚到历史版本
+- 配置变更必须通知相关团队
+- 验证方式：审计日志/配置中心记录
+
+2.2 连接与超时配置 | Connection & Timeout Configuration
+MUST 2.2.01 超时配置要求
+- 所有中间件调用必须配置超时时间
+- 超时时间必须根据业务特性设定，不得使用无限超时
+
+| 中间件类型 | 连接超时 | 读取超时 | 说明 |
+|-----------|----------|----------|------|
+| HTTP/Feign| 3s       | 30s      | 可按接口调整 |
+| Redis     | 2s       | 5s       | 简单操作 |
+| MySQL     | 5s       | 30s      | 复杂查询可更长 |
+| RocketMQ  | 3s       | -        | 发送超时 |
+| ES        | 5s       | 60s      | 复杂聚合查询 |
+
+- 验证方式：配置审查/集成测试
+
+MUST 2.2.02 重试策略
+- 必须配置重试上限，禁止无限重试
+- 必须使用退避策略（指数退避/固定延迟）
+- 只对幂等操作启用重试
+- 验证方式：配置审查
+
+```yaml
+# 正确示例 ✓
+spring:
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 3000
+            readTimeout: 30000
+            maxAttempts: 3               # 最多重试3次
+            backoff:
+              enabled: true
+              multiplier: 2              # 指数退避
+              initialInterval: 100ms     # 初始间隔
+
+# 错误示例 ✗
+maxAttempts: -1  # 无限重试
+```
+
+MUST 2.2.03 连接池配置
+- 必须配置连接池上限、空闲回收、健康检查
+- 连接池大小必须根据容量评估设定
+
+| 中间件 | 最小连接 | 最大连接 | 空闲回收 | 健康检查 |
+|--------|----------|----------|----------|----------|
+| MySQL  | 5        | 100      | 10min    | enabled  |
+| Redis  | 5        | 50       | 5min     | enabled  |
+| HTTP   | 5        | 200      | 60s      | -        |
+
+- 验证方式：性能测试/配置审查
+
+2.3 可观测性 | Observability
+MUST 2.3.01 日志要求
+- 所有关键操作必须记录日志
+- 日志必须包含：traceId/业务主键/操作结果
+- 日志级别：ERROR（错误）/WARN（警告）/INFO（关键操作）
+- 验证方式：日志审查/链路追踪
+
+```java
+// 正确示例 ✓
+log.info("Order created, orderId={}, traceId={}", order.getId(), TraceContext.getTraceId());
+log.error("Payment failed, orderId={}, error={}", orderId, e.getMessage(), e);
+
+// 错误示例 ✗
+log.info("Order created");  // 缺少关键信息
+log.info("Payment failed: " + e);  // 异常未正确处理
+```
+
+MUST 2.3.02 指标要求
+- 必须暴露核心指标：QPS/延迟/错误率/资源使用率
+- 指标命名规范：`{domain}_{subdomain}_{metric}_{unit}`
+
+| 指标类型 | 命名示例 | 说明 |
+|----------|----------|------|
+| 计数器   | api_requests_total | 总请求数 |
+| 仪表盘   | connection_pool_active | 活动连接数 |
+| 直方图   | api_duration_seconds | 请求延迟分布 |
+| 摘要     | cache_hit_ratio | 缓存命中率 |
+
+- 验证方式：Prometheus配置/监控Dashboard
+
+MUST 2.3.03 链路追踪
+- traceId必须贯穿全链路
+- 所有异步任务必须传递traceId
+- 采样率可配置：生产环境1-10%，开发环境100%
+- 验证方式：Zipkin/Jaeger验证
+
+2.4 环境隔离 | Environment Isolation
+MUST 2.4.01 环境隔离要求
+- 开发/测试/预发/生产必须使用独立的中间件实例
+- 禁止跨环境复用同一实例
+- 环境命名规范：dev/test/staging/prod
+- 验证方式：架构审查/配置扫描
+
+MUST 2.4.02 数据隔离
+- 敏感数据必须在生产环境加密存储
+- 测试数据不得包含真实PII信息
+- 验证方式：数据审计/安全扫描
+
+2.5 安全与合规 | Security & Compliance
+MUST 2.5.01 认证与授权
+- 生产环境必须启用认证授权
+- 必须使用最小权限原则
+- 禁止使用默认账号/弱密码
+- 验证方式：安全扫描/渗透测试
+
+MUST 2.5.02 传输加密
+- 生产环境必须启用TLS/SSL
+- 禁止使用已弃用的TLS版本（v1.0/v1.1）
+- 验证方式：SSL Labs测试/配置审查
+
+```yaml
+# 正确示例 ✓
+spring:
+  redis:
+    ssl: true
+    protocol: TLSv1.2,TLSv1.3
+
+# 错误示例 ✗
+spring:
+  redis:
+    ssl: false  # 生产环境禁用SSL
+```
+
+MUST 2.5.03 敏感数据处理
+- 日志/指标禁止包含PII明文
+- 密码/Token必须脱敏后记录
+- 验证方式：日志扫描/安全审查
+
+2.6 容错与降级 | Fault Tolerance & Degradation
+MUST 2.6.01 降级预案
+- 所有外部依赖必须具备降级方案
+- 降级开关必须可动态配置
+- 验证方式：架构审查/降级演练
+
+MUST 2.6.02 熔断配置
+- 必须配置熔断阈值和恢复策略
+- 熔断后不得返回伪成功
+- 验证方式：熔断测试/代码审查
+
+```java
+// 正确示例 ✓
+@CircuitBreaker(name = "userService", fallbackMethod = "getUserFallback")
+public User getUser(Long id) {
+    return userClient.getUser(id);
+}
+
+public User getUserFallback(Long id, Exception e) {
+    log.warn("UserService unavailable, using cache, id={}", id);
+    return userCache.get(id);  // 明确的降级逻辑
+}
+
+// 错误示例 ✗
+@CircuitBreaker(name = "userService")
+public User getUser(Long id) {
+    try {
+        return userClient.getUser(id);
+    } catch (Exception e) {
+        return new User();  // 空对象，伪成功
+    }
+}
+```
+
+MUST 2.6.03 回滚要求
+- 所有发布必须可回滚
+- 回滚时间目标 <= 10分钟
+- 必须定期演练回滚流程
+- 验证方式：回滚演练记录
+
+================================================================================
+3. 中间件搭配使用规则（MUST）| Integration Rules
+================================================================================
+3.1 缓存与数据库 | Cache & Database
+MUST 3.1.01 缓存一致性策略
+- 写路径必须明确采用：Cache-Aside/Write-Through/Write-Behind
+- 本项目统一使用：Cache-Aside（旁路缓存）
+- 验证方式：代码审查
+
+```java
+// Cache-Aside 模式 ✓
+public Product getProduct(Long id) {
+    // 1. 先查缓存
+    Product product = cache.get(id);
+    if (product != null) {
+        return product;
+    }
+    // 2. 缓存未命中，查数据库
+    product = productMapper.selectById(id);
+    if (product != null) {
+        // 3. 写入缓存
+        cache.set(id, product, TTL);
+    }
+    return product;
+}
+
+public void updateProduct(Product product) {
+    // 1. 先更新数据库
+    productMapper.updateById(product);
+    // 2. 删除缓存（而非更新）
+    cache.delete(product.getId());
+}
+```
+
+MUST 3.1.02 缓存失效策略
+- 业务缓存必须设置TTL，禁止永久缓存
+- 热点Key必须保护：互斥锁/提前过期/本地缓存
+- 验证方式：代码审查/缓存分析
+
+| 缓存类型 | 默认TTL | 说明 |
+|----------|---------|------|
+| 商品信息 | 30min   | 可接受短暂延迟 |
+| 用户信息 | 15min   | 变更频率中等 |
+| 配置信息 | 5min    | 需快速生效 |
+| 热点商品 | 1min    + 互斥锁 | 防击穿 |
+| 计数器   | 不过期  + 定期持久化 | 防丢失 |
+
+MUST 3.1.03 缓存防护
+- 缓存雪崩防护：TTL增加随机偏移（±10%）
+- 缓存击穿防护：热点Key使用互斥锁
+- 缓存污染防护：设置最大内存+淘汰策略
+- 验证方式：代码审查/压测
+
+3.2 消息队列与数据库 | MQ & Database
+MUST 3.2.01 幂等性要求
+- 消费端必须支持重复消息处理
+- 必须使用业务唯一键做幂等控制
+- 验证方式：幂等测试/代码审查
+
+```java
+// 正确示例 ✓
+@RocketMQMessageListener(topic = "order-topic", consumerGroup = "order-group")
+public class OrderConsumer implements RocketMQListener<OrderMessage> {
+    @Override
+    public void onMessage(OrderMessage message) {
+        // 使用唯一键保证幂等
+        String uniqueKey = "order:" + message.getOrderId();
+        if (redis.setnx(uniqueKey, "1", 24h) == 0) {
+            log.info("Duplicate message, orderId={}", message.getOrderId());
+            return;  // 重复消息，直接返回
+        }
+        // 处理业务逻辑
+        processOrder(message);
+    }
+}
+```
+
+MUST 3.2.02 事务消息
+- 事务与消息必须采用可靠投递策略
+- 推荐方案：本地消息表/Outbox模式/事务消息
+- 禁止：DB事务 + MQ发送嵌套在同一事务中
+- 验证方式：架构审查/混沌测试
+
+```
+正确方案 ✓：本地消息表
+BEGIN TRANSACTION
+1. 业务操作（INSERT/UPDATE）
+2. 插入消息表（status=PENDING）
+COMMIT
+
+异步任务：
+3. 扫描消息表
+4. 发送MQ
+5. 更新状态（SENT/FAILED）
+
+错误方案 ✗：
+BEGIN TRANSACTION
+1. 业务操作
+2. 发送MQ（可能失败/重复）
+COMMIT  -- MQ发送不在事务中
+```
+
+MUST 3.2.03 死信队列处理
+- 必须配置死信队列
+- 死信消息必须告警
+- 必须有死信消息重放机制
+- 验证方式：MQ配置审查/告警测试
+
+3.3 网关与服务 | Gateway & Service
+MUST 3.3.01 限流统一策略
+- 网关限流与服务限流必须协同
+- 网关限流 > 服务限流，避免放大失败
+- 限流算法推荐：令牌桶/滑动窗口
+- 验证方式：架构审查/压测
+
+```
+正确配置 ✓：
+网关限流：1000 QPS
+服务限流：800 QPS  （留有余量）
+
+错误配置 ✗：
+网关限流：1000 QPS
+服务限流：1200 QPS  （服务限流无效）
+```
+
+MUST 3.3.02 配置中心化
+- CORS/熔断/限流配置必须存储在Nacos
+- 配置变更必须支持动态刷新，无需重启
+- 验证方式：配置审查/动态刷新测试
+
+3.4 分布式事务 | Distributed Transaction
+MUST 3.4.01 Seata使用规范
+- 必须明确全局事务边界
+- 禁止将长耗时逻辑放入全局事务
+- 全局事务超时 <= 60秒
+- 验证方式：代码审查/事务测试
+
+```java
+// 正确示例 ✓
+@GlobalTransactional(timeoutMills = 60000)
+public void createOrder(OrderDTO dto) {
+    // 仅包含核心业务逻辑
+    orderService.create(dto);
+    inventoryService.deduct(dto.getProductId(), dto.getCount());
+    // 不包含：RPC调用/外部请求/耗时计算
+}
+
+// 错误示例 ✗
+@GlobalTransactional
+public void createOrder(OrderDTO dto) {
+    orderService.create(dto);
+    inventoryService.deduct(dto.getProductId(), dto.getCount());
+    paymentService.callThirdParty(dto);  // 外部RPC，违反规则
+    notificationService.sendEmail(dto);  // 非核心逻辑
+}
+```
+
+MUST 3.4.02 分布式事务与消息队列
+- 分布式事务与消息队列不得嵌套
+- 必须使用补偿/最终一致性方案
+- 验证方式：架构审查
+
+================================================================================
+4. 中间件专项规范 | Middleware-Specific Standards
+================================================================================
+4.1 Nacos | Service Discovery & Configuration Center
+MUST 4.1.01 命名空间与分组隔离
+- 必须使用命名空间隔离环境（dev/test/prod）
+- 分组命名规范：{service-name}-{group-name}
+- 验证方式：配置审查
+
+| 环境 | 命名空间       | 分组示例          |
+|------|----------------|-------------------|
+| 开发 | dev            | user-service-dev  |
+| 测试 | test           | user-service-test |
+| 生产 | prod           | user-service      |
+
+MUST 4.1.02 配置管理
+- 配置项必须有默认值
+- 缺失配置时服务不得启动（fail-fast）
+- 配置变更必须灰度发布
+- 验证方式：启动测试/灰度发布记录
+
+MUST 4.1.03 日志控制
+- Nacos客户端日志级别 >= WARN
+- 禁止日志洪泛
+- 验证方式：日志审查
+
+```yaml
+# 正确配置 ✓
+logging:
+  level:
+    com.alibaba.nacos: WARN
+    com.alibaba.nacos.client.config: ERROR
+```
+
+4.2 Spring Cloud Gateway | API Gateway
+MUST 4.2.01 超时与连接配置
+```yaml
+# 推荐配置
+spring:
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 3000          # 连接超时3秒
+        response-timeout: 60s          # 响应超时60秒
+        pool:
+          max-connections: 500         # 最大连接数
+          max-idle-time: 20s           # 空闲回收时间
+          max-life-time: 60s           # 连接最大存活时间
+```
+- 验证方式：配置审查/压测
+
+MUST 4.2.02 统一鉴权
+- 必须实现集中鉴权拦截器（AuthGlobalFilter）
+- Token验证失败必须返回明确错误码
+- 用户信息通过请求头透传：X-User-Id/X-User-Name/X-User-Role
+- 验证方式：鉴权测试
+
+MUST 4.2.03 TraceId传递
+- 必须使用TraceIdGlobalFilter最先执行
+- 生成或提取X-Trace-Id并透传
+- 验证方式：链路追踪验证
+
+MUST 4.2.04 响应式编程规范
+- 禁止使用subscribe()后立即返回成功
+- 必须使用block()等待异步操作完成
+- 验证方式：代码扫描/静态分析
+
+```java
+// 正确示例 ✓
+return routeLocator.route()
+    .and().route("user-service")
+    .uri("lb://user-service")
+    .build();
+
+// 错误示例 ✗
+routeLocator.route()
+    .and().route("user-service")
+    .uri("lb://user-service")
+    .subscribe();  // 立即返回，实际未完成
+return Response.success();
+```
+
+MUST 4.2.05 网关职责边界
+- 网关不得实现业务逻辑
+- 网关不得访问数据库
+- 网关不得调用第三方业务接口
+- 验证方式：架构审查/代码扫描
+
+4.3 Sentinel | Flow Control & Circuit Breaker
+MUST 4.3.01 规则管理
+- 规则源必须集中管理（Nacos配置）
+- 规则变更必须记录审计日志
+- 验证方式：规则配置审查
+
+MUST 4.3.02 限流规则
+```yaml
+# 推荐配置
+resource: /api/user/get
+grade: 1                    # QPS限流
+count: 1000                 # 阈值
+strategy: 0                 # 直接拒绝
+controlBehavior: 0          # 快速失败
+```
+- 验证方式：限流测试
+
+MUST 4.3.03 熔断规则
+```yaml
+# 推荐配置
+resource: userRemoteService
+grade: 1                    # 异常比例
+count: 0.5                  # 50%异常率
+timeWindow: 10              # 统计窗口10秒
+minRequestAmount: 10        # 最小请求数
+```
+- 验证方式：熔断测试
+
+MUST 4.3.04 降级兜底
+- 必须配置降级兜底逻辑
+- 禁止返回伪成功
+- 验证方式：降级测试
+
+4.4 OpenFeign | Declarative HTTP Client
+MUST 4.4.01 超时配置
+```yaml
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 3000
+        readTimeout: 30000
+      # 特定服务可覆盖
+      PaymentService:
+        readTimeout: 5000   # 支付接口较短超时
+```
+- 验证方式：配置审查
+
+MUST 4.4.02 重试与降级
+- 必须配置重试上限（推荐3次）
+- 必须配置失败降级
+- 验证方式：代码审查/降级测试
+
+MUST 4.4.03 统一错误处理
+```java
+// 正确示例 ✓
+@FeignClient(name = "user-service", fallback = UserServiceFallback.class)
+public interface UserService {
+    @GetMapping("/api/users/{id}")
+    Result<User> getUser(@PathVariable Long id);
+}
+
+// 降级处理
+public class UserServiceFallback implements UserService {
+    @Override
+    public Result<User> getUser(Long id) {
+        return Result.error("SERVICE_UNAVAILABLE", "User service temporarily unavailable");
+    }
+}
+```
+- 验证方式：降级测试
+
+4.5 Redis | Distributed Cache
+MUST 4.5.01 Key命名规范
+```
+格式：{业务}:{模块}:{标识}:{唯一键}
+示例：
+- user:profile:1001          用户资料
+- product:detail:2001        商品详情
+- cart:items:1001            购物车
+- order:info:ORD20250101001  订单信息
+```
+- 验证方式：代码审查/Key扫描
+
+MUST 4.5.02 内存管理
+- 禁止使用不受控的大Key（>1MB）
+- 禁止使用热点Key（单Key QPS > 10000需处理）
+- 设置最大内存限制和淘汰策略
+- 验证方式：Redis监控/内存分析
+
+```yaml
+# 推荐配置
+maxmemory: 4gb
+maxmemory-policy: allkeys-lru  # 所有键LRU淘汰
+```
+
+MUST 4.5.03 连接池配置
+```yaml
+# 推荐配置（8核16G服务器）
+lettuce:
+  pool:
+    max-active: 50
+    max-idle: 20
+    min-idle: 5
+    max-wait: 3s
+```
+- 验证方式：性能测试
+
+MUST 4.5.04 缓存穿透防护
+- 对不存在的数据也缓存（值为NULL）
+- 使用布隆过滤器预判
+- 验证方式：代码审查/压测
+
+4.6 Redisson | Distributed Lock
+MUST 4.6.01 锁配置规范
+```java
+// 正确示例 ✓
+RLock lock = redissonClient.getLock("order:create:" + userId);
+try {
+    // 等待时间3秒，锁自动释放时间10秒
+    boolean acquired = lock.tryLock(3, 10, TimeUnit.SECONDS);
+    if (!acquired) {
+        throw new BusinessException("获取锁失败，请稍后重试");
+    }
+    // 业务逻辑
+    doBusiness();
+} finally {
+    if (lock.isHeldByCurrentThread()) {
+        lock.unlock();
+    }
+}
+
+// 错误示例 ✗
+lock.lock();
+doBusiness();
+// 忘记释放锁
+```
+- 验证方式：代码审查
+
+MUST 4.6.02 锁粒度
+- 锁粒度尽可能细
+- 禁止使用全局锁影响核心路径
+- 验证方式：架构审查
+
+MUST 4.6.03 看门狗机制
+- 锁自动释放时间必须 > 业务执行时间
+- 复杂业务使用看门狗自动续期
+- 验证方式：代码审查
+
+4.7 RocketMQ | Message Queue
+MUST 4.7.01 生产者配置
+```yaml
+# 推荐配置
+rocketmq:
+  producer:
+    send-message-timeout: 3000       # 发送超时3秒
+    retry-times-when-send-failed: 2  # 失败重试2次
+    max-message-size: 4194304        # 最大4MB
+```
+- 验证方式：配置审查
+
+MUST 4.7.02 消费者配置
+```yaml
+# 推荐配置
+rocketmq:
+  consumer:
+    consume-timeout: 15              # 消费超时15分钟
+    max-reconsume-times: 3           # 最大重试3次
+    message-model: CLUSTERING        # 集群消费
+```
+- 验证方式：配置审查
+
+MUST 4.7.03 消息幂等
+- 参见 3.2.01
+- 验证方式：幂等测试
+
+MUST 4.7.04 死信队列
+```yaml
+# 超过最大重试次数后进入死信队列
+DLQ: %DLQ%{consumerGroup}
+```
+- 必须配置死信队列消费者
+- 死信消息必须告警
+- 验证方式：死信队列测试
+
+MUST 4.7.05 事务消息
+```java
+// 正确示例 ✓
+@Transactional
+public void createOrder(Order order) {
+    // 1. 发送半消息
+    Message msg = new Message("order-topic", order.toJson().getBytes());
+    SendResult sendResult = mqProducer.sendMessageInTransaction(msg, null);
+    // 2. 本地事务
+    orderMapper.insert(order);
+    // 3. 提交事务（MQ自动回查）
+}
+```
+- 验证方式：事务消息测试
+
+4.8 Seata | Distributed Transaction
+MUST 4.8.01 事务边界
+- 参见 3.4.01
+- 验证方式：代码审查
+
+MUST 4.8.02 模式选择
+```java
+// AT模式：适合简单CRUD
+@GlobalTransactional
+public void purchase(String userId, String commodityCode, int orderCount) {
+    // 自动代理，无需额外代码
+}
+
+// TCC模式：适合复杂业务
+@LocalTCC
+public class StockTccService {
+    @TwoPhaseBusinessAction(name = "stockDeduct", commitMethod = "commit", rollbackMethod = "rollback")
+    public boolean prepare(BusinessActionContext context, int count) {
+        // 预留资源
+        return stockDao.deduct(count, 0);  // 冻结库存
+    }
+
+    public boolean commit(BusinessActionContext context) {
+        // 确认扣减
+        return stockDao.deduct(count, 1);
+    }
+
+    public boolean rollback(BusinessActionContext context) {
+        // 释放冻结
+        return stockDao.release(count);
+    }
+}
+```
+- 验证方式：代码审查/事务测试
+
+MUST 4.8.03 配置一致性
+- Seata注册/配置中心必须与Nacos环境一致
+- 验证方式：配置审查
+
+4.9 MySQL | Relational Database
+MUST 4.9.01 连接池配置
+```yaml
+# 推荐配置（HikariCP）
+spring:
+  datasource:
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 100
+      idle-timeout: 600000        # 10分钟
+      connection-timeout: 30000   # 30秒
+      max-lifetime: 1800000       # 30分钟
+```
+- 验证方式：性能测试
+
+MUST 4.9.02 慢查询监控
+```sql
+-- 开启慢查询
+SET GLOBAL slow_query_log = 'ON';
+SET GLOBAL long_query_time = 1;  -- 1秒
+```
+- 必须配置慢查询告警
+- 验证方式：慢查询日志
+
+MUST 4.9.03 索引规范
+- 关键查询必须有索引
+- 禁止在WHERE/ORDER BY字段上无索引查询
+- 验证方式：执行计划分析
+
+MUST 4.9.04 分页限制
+```java
+// 正确示例 ✓
+public PageResult<Order> list(int page, int size) {
+    if (size > 100) {
+        throw new IllegalArgumentException("Page size cannot exceed 100");
+    }
+    // ...
+}
+```
+- 最大分页大小 <= 1000
+- 深分页需使用游标/seek方案
+- 验证方式：代码审查
+
+4.10 Elasticsearch | Search Engine
+MUST 4.10.01 索引设计
+```yaml
+# 推荐配置
+number_of_shards: 3              # 根据数据量调整
+number_of_replicas: 1            # 至少1个副本
+refresh_interval: 30s            # 平衡实时性与性能
+```
+- 验证方式：索引配置审查
+
+MUST 4.10.02 查询规范
+```java
+// 正确示例 ✓
+SearchRequest request = new SearchRequest("orders");
+SearchSourceBuilder builder = new SearchSourceBuilder()
+    .query(QueryBuilders.matchQuery("product", keyword))
+    .from(0)
+    .size(100)                   // 限制最大1000
+    .timeout(TimeValue.timeValueSeconds(5));
+```
+- 查询必须设置超时（<= 5秒）
+- 分页上限 <= 10000
+- 验证方式：查询测试
+
+MUST 4.10.03 索引生命周期
+```
+热索引：0-7天，高频写入
+温索引：7-30天，只读
+冷索引：30-365天，归档
+删除：>365天
+```
+- 验证方式：ILM策略审查
+
+4.11 日志与监控 | Logging & Monitoring
+MUST 4.11.01 日志配置
+```xml
+<!-- logback-spring.xml 推荐配置 -->
+<configuration>
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{traceId}] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 文件输出 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/app.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/app.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{traceId}] - %msg%n</pattern>
+        </encoder>
+    </appender>
+</configuration>
+```
+- 验证方式：日志格式检查
+
+MUST 4.11.02 监控指标
+```yaml
+# Prometheus 必须采集的指标
+metrics:
+  - name: jvm_memory_used_bytes
+    type: gauge
+  - name: jvm_gc_pause_seconds
+    type: histogram
+  - name: http_server_requests_seconds
+    type: histogram
+  - name: cache_gets_total
+    type: counter
+    tags: [result, cache]
+  - name: database_connections_active
+    type: gauge
+```
+- 验证方式：Prometheus配置审查
+
+MUST 4.11.03 告警规则
+```yaml
+# Prometheus 告警规则示例
+groups:
+  - name: middleware_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        annotations:
+          summary: "High error rate detected"
+
+      - alert: SlowQuery
+        expr: histogram_quantile(0.99, rate(http_server_requests_seconds_bucket[5m])) > 1
+        for: 10m
+        annotations:
+          summary: "99th percentile latency > 1s"
+```
+- 验证方式：告警测试
+
+================================================================================
+5. 测试与验证规范 | Testing & Validation Standards
+================================================================================
+5.1 集成测试 | Integration Testing
+MUST 5.1.01 中间件联调测试
+- 新增中间件必须通过集成测试
+- 测试环境必须模拟生产配置
+- 验证方式：测试报告
+
+MUST 5.1.02 故障注入测试
+- 关键路径必须通过故障注入测试
+- 故障场景：网络延迟/丢包/中间件宕机
+- 验证方式：Chaos Engineering测试报告
+
+```yaml
+# Chaos Mesh 故障注入示例
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: redis-delay
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces:
+      - prod
+  delay:
+    latency: "100ms"
+```
+
+5.2 性能测试 | Performance Testing
+MUST 5.2.01 容量评估
+- 新增中间件必须进行容量评估
+- 必须测试：峰值流量/并发连接/数据量
+- 验证方式：压测报告
+
+| 中间件 | 测试指标              | 推荐工具         |
+|--------|-----------------------|------------------|
+| MySQL  | QPS/连接数/慢查询     | sysbench/JMeter  |
+| Redis  | QPS/内存/命中率       | redis-benchmark  |
+| MQ     | TPS/消息堆积/消费延迟 | JMeter           |
+| ES     | QPS/查询延迟/索引大小 | Rally            |
+
+5.3 灾备演练 | Disaster Recovery Drill
+MUST 5.3.01 演练要求
+- 每季度至少1次灾备演练
+- 演练内容：故障切换/数据恢复/降级
+- 验证方式：演练报告/复盘记录
+
+================================================================================
+6. CI/CD集成 | CI/CD Integration
+================================================================================
+6.1 自动化检查 | Automated Checks
+MUST 6.1.01 CI流水线检查
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    CI Pipeline                              │
+├─────────────────────────────────────────────────────────────┤
+│ 1. 代码扫描                                                  │
+│    - Secrets扫描（禁止密钥入库）                            │
+│    - 配置扫描（禁止硬编码）                                  │
+│    - 依赖漏洞扫描                                            │
+├─────────────────────────────────────────────────────────────┤
+│ 2. 规范检查                                                  │
+│    - 配置文件格式检查                                        │
+│    - 中间件使用规范检查                                      │
+│    - 超时/重试配置检查                                      │
+├─────────────────────────────────────────────────────────────┤
+│ 3. 单元测试                                                  │
+│    - 单元测试覆盖率 >= 70%                                  │
+│    - 关键路径覆盖率 >= 80%                                  │
+├─────────────────────────────────────────────────────────────┤
+│ 4. 集成测试                                                  │
+│    - 中间件联调测试                                          │
+│    - 幂等测试                                                │
+│    - 熔断降级测试                                            │
+├─────────────────────────────────────────────────────────────┤
+│ 5. 安全扫描                                                  │
+│    - SAST扫描                                                │
+│    - 容器镜像扫描                                            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+MUST 6.1.2 检查规则配置
+```yaml
+# .github/workflows/ci.yml 示例
+name: Middleware Compliance Check
+
+on: [pull_request]
+
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scan for hardcoded secrets
+        run: |
+          trufflehog filesystem ./
+
+      - name: Check configuration files
+        run: |
+          scripts/check-middleware-config.sh
+
+      - name: Run integration tests
+        run: |
+          mvn test -Dtest=**/*IntegrationTest
+```
+
+6.2 合规度度量 | Compliance Metrics
+MUST 6.2.01 度量指标
+```
+合规度 = (符合MUST规则的条目数 / 总MUST规则条目数) × 100%
+
+目标：
+- 新代码合规度 >= 95%
+- 存量代码合规度 >= 80%（逐步提升）
+```
+- 验证方式：合规度报告/月度度量
+
+================================================================================
+7. 附录 | Appendix
+================================================================================
+7.1 验证方式映射表 | Verification Method Mapping
+
+| 规则类别 | 验证方式 | 工具/方法 |
+|----------|----------|-----------|
+| 配置管理 | Secrets扫描/配置审查 | trufflehog/gitleaks |
+| 超时重试 | 配置审查/集成测试 | 人工审查/JMeter |
+| 连接池 | 性能测试/配置审查 | 压测工具 |
+| 日志规范 | 日志审查/静态检查 | 自定义脚本/ESLint |
+| 指标规范 | Prometheus配置审查 | promtool |
+| 链路追踪 | Zipkin验证 | Zipkin UI |
+| 环境隔离 | 架构审查 | 人工审查 |
+| 认证授权 | 安全扫描/渗透测试 | OWASP ZAP |
+| TLS配置 | SSL Labs测试 | ssltest |
+| 敏感数据 | 日志扫描/安全审查 | 正则扫描 |
+| 降级熔断 | 降级测试/代码审查 | Chaos Mesh |
+| 幂等性 | 幂等测试 | JMeter |
+| 死信队列 | MQ配置审查 | 人工审查 |
+| 索引优化 | 执行计划分析 | EXPLAIN |
+| 慢查询 | 慢查询日志 | MySQL慢查询日志 |
+| CI集成 | CI配置审查 | Jenkins/GitHub Actions |
+
+7.2 配置模板 | Configuration Templates
+7.2.01 通用配置模板
+```yaml
+# application-template.yml
+spring:
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 100
+      connection-timeout: 30000
+
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD}
+    ssl: ${REDIS_SSL:true}
+    lettuce:
+      pool:
+        max-active: 50
+        max-idle: 20
+        min-idle: 5
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR}
+        namespace: ${NACOS_NAMESPACE}
+      config:
+        server-addr: ${NACOS_ADDR}
+        namespace: ${NACOS_NAMESPACE}
+
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_ADDR}
+      datasource:
+        flow:  # Nacos数据源
+          nacos:
+            server-addr: ${NACOS_ADDR}
+            data-id: ${spring.application.name}-flow-rules
+            rule-type: flow
+
+rocketmq:
+  name-server: ${ROCKETMQ_ADDR}
+  producer:
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+```
+
+7.3 联系方式 | Contact Information
+| 角色 | 联系方式 |
+|------|----------|
+| 规范Owner | 164112436@qq.com |
+| 基础设施团队 | 164112436@qq.com |
+| 安全团队 | 164112436@qq.com |
+| 运维团队 | 164112436@qq.com |
+
+7.4 相关文档 | Related Documents
+- 《工程治理与流程规范.txt》
+- 《后端规范.txt》
+- 《前端规范.txt》
+- 公司架构评审流程
+- 应急响应手册
+
+================================================================================
+文档结束 | End of Document
+================================================================================

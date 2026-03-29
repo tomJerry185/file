@@ -1,0 +1,161 @@
+# Prometheus 告警规则配置
+# Prometheus Alerting Rules Configuration
+# 目标：监控工程核心指标、服务质量、安全合规
+
+groups:
+  # 服务可用性
+  - name: service_availability
+    interval: 30s
+    rules:
+      - alert: ServiceDown
+        expr: up{job=~"order-service|payment-service|user-service|api-gateway"} == 0
+        for: 5m
+        labels:
+          severity: P0
+          team: platform
+        annotations:
+          summary: "服务 {{ $labels.job }} 不可用"
+          description: "{{ $labels.job }} 已宕机超过1分钟"
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) /
+          sum(rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: P1
+          team: platform
+        annotations:
+          summary: "服务 {{ $labels.job }} 错误率过高"
+          description: "服务 {{ $labels.job }} 错误率 {{ $value | humanizePercentage }}，持续5分钟"
+
+  # 数据库性能
+  - name: database_performance
+    interval: 1m
+    rules:
+      - alert: SlowQuery
+        expr: |
+          avg(mysql_slow_query_duration_seconds{service=~"order-service|payment-service"}) > 1
+        for: 5m
+        labels:
+          severity: P2
+          team: platform
+        annotations:
+          summary: "慢查询检测"
+          description: "{{ $labels.service }} 平均查询耗时 {{ $value }}s，超过1秒"
+
+      - alert: DatabasePoolExhausted
+        expr: |
+          hikari_pool_active_connections{service=~"order-service|payment-service"} /
+          hikari_pool_max_connections{service=~"order-service|payment-service"} > 0.9
+        for: 2m
+        labels:
+          severity: P1
+          team: platform
+        annotations:
+          summary: "数据库连接池接近耗尽"
+          description: "{{ $labels.service }} 连接池使用率 {{ $value | humanizePercentage }}，持续2分钟"
+
+  # 缓存性能
+  - name: cache_performance
+    interval: 1m
+    rules:
+      - alert: LowCacheHitRate
+        expr: |
+          rate(cache_hit_total{service=~"redis-cache"}[5m]) /
+          rate(cache_requests_total{service=~"redis-cache"}[5m]) < 0.8
+        for: 10m
+        labels:
+          severity: P2
+          team: platform
+        annotations:
+          summary: "Redis 缓存命中率过低"
+          description: "Redis 缓存命中率 {{ $value | humanizePercentage }}，低于80%"
+
+  # 消息队列性能
+  - name: message_queue_performance
+    interval: 1m
+    rules:
+      - alert: HighMessageLag
+        expr: |
+          avg(mq_message_lag_seconds{service=~"order-service|payment-service"}) > 1
+        for: 5m
+        labels:
+          severity: P2
+          team: platform
+        annotations:
+          summary: "消息队列延迟过高"
+          description: "{{ $labels.service }} 消息延迟 {{ $value }}s，超过1秒"
+
+      - alert: MessageBacklog
+        expr: |
+          mq_message_backlog_total{service=~"order-service|payment-service"} > 1000
+        for: 5m
+        labels:
+          severity: P1
+          team: platform
+        annotations:
+          summary: "消息队列积压严重"
+          description: "{{ $labels.service }} 积压 {{ $value }} 条消息"
+
+  # 工程效能
+  - name: engineering_productivity
+    interval: 5m
+    rules:
+      - alert: HighDeploymentFailureRate
+        expr: |
+          sum(rate(deployment_total{status="failed"}[1d])) /
+          sum(rate(deployment_total[1d])) > 0.15
+        for: 10m
+        labels:
+          severity: P2
+          team: ep
+        annotations:
+          summary: "部署失败率过高"
+          description: "部署失败率 {{ $value | humanizePercentage }}，高于15%"
+
+      - alert: LongLeadTime
+        expr: |
+          avg(lead_time_seconds{environment="production"}) > 86400
+        for: 10m
+        labels:
+          severity: P1
+          team: ep
+        annotations:
+          summary: "变更前置时间过长"
+          description: "平均前置时间 {{ $value | humanizeDuration }}，超过1天"
+
+  # 安全合规
+  - name: security_compliance
+    interval: 5m
+    rules:
+      - alert: CriticalVulnerabilityDetected
+        expr: |
+          max(severity{type="critical"}) > 0
+        for: 1m
+        labels:
+          severity: P0
+          team: security
+        annotations:
+          summary: "检测到严重安全漏洞"
+          description: "发现 {{ $value }} 个严重漏洞"
+
+      - alert: UnauthorizedAccessAttempts
+        expr: |
+          sum(rate(http_requests_total{status="401"}[1m])) > 10
+        for: 5m
+        labels:
+          severity: P1
+          team: security
+        annotations:
+          summary: "未授权访问尝试过多"
+          description: "401错误率 {{ $value | humanizeRate }} 次/分钟"
+
+# 全局配置
+global:
+  resolve_timeout: 5m
+  evaluation_interval: 1m
+  external_labels:
+    cluster: shop-production
+    environment: production
+    region: cn
