@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="790ac23f-940c-4596-b5b6-def9dcd172f7" name="更改" comment="AI智能体生成代码规范文件，建议全部看一遍再使用，每次使用时，让AI读取相应的规范再修改代码，最好是备份代码，因为AI并不是尽人意的。" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GiteeDefaultAccount">
+    <option name="defaultAccountId" value="7e13d445-c40f-4bfe-9091-a1b5b3edba70" />
+  </component>
+  <component name="GithubDefaultAccount">
+    <option name="defaultAccountId" value="429ad172-c33a-4a98-ba84-886277e58121" />
+  </component>
+  <component name="KubernetesApiPersistence"><![CDATA[{}]]></component>
+  <component name="KubernetesApiProvider"><![CDATA[{
+  "isMigrated": true
+}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
+  <component name="ProjectId" id="36ehnS2tmBvKZmLFxL7ejBAL8Qt" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "D:/demo/file/.idea/rule",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\demo\file\.idea\rule" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\demo\file\.idea\链接" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-2fc7cc6b9a17-intellij.indexing.shared.core-IU-253.32098.37" />
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.32098.37" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="790ac23f-940c-4596-b5b6-def9dcd172f7" name="更改" comment="" />
+      <created>1765373110237</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1765373110237</updated>
+      <workItem from="1765373111467" duration="1407000" />
+      <workItem from="1766493719039" duration="787000" />
+      <workItem from="1766552311603" duration="119000" />
+      <workItem from="1766552980742" duration="1381000" />
+      <workItem from="1773911018401" duration="1216000" />
+      <workItem from="1774012966618" duration="656000" />
+      <workItem from="1774800383272" duration="963000" />
+    </task>
+    <task id="LOCAL-00001" summary="20251210整理文件">
+      <option name="closed" value="true" />
+      <created>1765373583083</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1765373583084</updated>
+    </task>
+    <task id="LOCAL-00002" summary="20251210整理文件">
+      <option name="closed" value="true" />
+      <created>1765374442687</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1765374442687</updated>
+    </task>
+    <task id="LOCAL-00003" summary="20251210整理文件">
+      <option name="closed" value="true" />
+      <created>1766553710647</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1766553710647</updated>
+    </task>
+    <task id="LOCAL-00004" summary="整理文件">
+      <option name="closed" value="true" />
+      <created>1766553757257</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1766553757257</updated>
+    </task>
+    <task id="LOCAL-00005" summary="AI智能体生成代码规范文件，建议全部看一遍再使用，每次使用时，让AI读取相应的规范再修改代码，最好是备份代码，因为AI并不是尽人意的。">
+      <option name="closed" value="true" />
+      <created>1774800558033</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1774800558033</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="20251210整理文件" />
+    <MESSAGE value="整理文件" />
+    <MESSAGE value="AI智能体生成代码规范文件，建议全部看一遍再使用，每次使用时，让AI读取相应的规范再修改代码，最好是备份代码，因为AI并不是尽人意的。" />
+    <option name="LAST_COMMIT_MESSAGE" value="AI智能体生成代码规范文件，建议全部看一遍再使用，每次使用时，让AI读取相应的规范再修改代码，最好是备份代码，因为AI并不是尽人意的。" />
+  </component>
+</project>
