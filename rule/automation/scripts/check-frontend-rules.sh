@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # 前端规范合规检查脚本
-# 对齐文件：rule/前端规范.txt
+# 对齐文件：rule/前端规范.md
 # 用途：CI/CD 集成或本地 pre-commit 检查
 # 使用：bash rule/automation/scripts/check-frontend-rules.sh [前端目录]
 # =============================================================================
@@ -143,23 +143,32 @@ check_v_html() {
     begin_check "v-html使用检测" "前端规范 9.1.01 v-html必须净化"
 
     local count=0
+    local unsanitized=0
     local details=""
 
     if [ -d "$FRONTEND_DIR/src" ]; then
-        while IFS= read -r line; do
-            local file=$(echo "$line" | cut -d: -f1)
-            local lineno=$(echo "$line" | cut -d: -f2)
+        # 先找到所有使用 v-html 的文件
+        local vhtml_files=$(grep -rl "v-html" "$FRONTEND_DIR/src" --include="*.vue" 2>/dev/null || true)
+
+        for file in $vhtml_files; do
             count=$((count + 1))
-            if [ "$count" -le 10 ]; then
-                details="${details}\n    ${file}:${lineno}"
+            # 检查同一文件中是否使用了 DOMPurify 净化
+            if ! grep -q "DOMPurify\|sanitize\|purify" "$file" 2>/dev/null; then
+                unsanitized=$((unsanitized + 1))
+                local lineno=$(grep -n "v-html" "$file" | head -1 | cut -d: -f1)
+                if [ "$unsanitized" -le 10 ]; then
+                    details="${details}\n    ${file}:${lineno}"
+                fi
             fi
-        done < <(grep -rn "v-html" "$FRONTEND_DIR/src" --include="*.vue" 2>/dev/null || true)
+        done
     fi
 
     if [ "$count" -eq 0 ]; then
         pass
+    elif [ "$unsanitized" -eq 0 ]; then
+        pass
     else
-        warn "发现 ${count} 处 v-html 使用，请确保使用 DOMPurify 净化：${details}"
+        fail "发现 ${unsanitized}/${count} 处 v-html 未使用 DOMPurify 净化（SEC-XSS-002）：${details}"
     fi
 }
 
@@ -236,7 +245,7 @@ check_ts_any() {
 echo "============================================"
 echo "  前端规范合规检查"
 echo "  目录: ${FRONTEND_DIR}"
-echo "  对齐: rule/前端规范.txt"
+echo "  对齐: rule/前端规范.md"
 echo "============================================"
 echo ""
 

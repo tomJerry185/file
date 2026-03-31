@@ -1,0 +1,45 @@
+{
+  "generatedAt": "2026-03-31T12:00:00+08:00",
+  "totalRules": 120,
+  "automatedRules": 48,
+  "violations": 8,
+  "complianceRate": "83.3%",
+  "backend": {
+    "autowired": { "status": "warn", "count": 100, "suppressed": true, "expires": "2026-09-30" },
+    "select-star": { "status": "warn", "count": 2, "suppressed": true, "expires": "2026-06-30" },
+    "cross-layer": { "status": "pass", "count": 0 },
+    "sout": { "status": "warn", "count": 16, "suppressed": true, "expires": "2026-06-30" },
+    "empty-catch": { "status": "pass", "count": 0 },
+    "no-interface": { "status": "pass", "count": 0 }
+  },
+  "frontend": {
+    "script-setup": { "status": "fail", "count": 49, "total": 142, "rate": "34%", "target": ">= 80%" },
+    "typescript": { "status": "fail", "count": 0, "total": 142, "rate": "0%", "target": ">= 80%" },
+    "console": { "status": "fail", "count": 328, "note": "94个文件含console调用残留" },
+    "vhtml": { "status": "warn", "count": 3, "note": "ProductDetail.vue未净化，AIChat.vue有formatMessageContent" },
+    "any": { "status": "warn", "count": 11, "note": "index.ts(7处)、validate.ts(4处)" },
+    "colors": { "status": "pass", "count": 0 }
+  },
+  "security": {
+    "rate": { "status": "pass", "count": 18, "note": "Sentinel+网关限流已配置" },
+    "secrets": { "status": "warn", "count": 3, "suppressed": true, "note": "dev config + default fallbacks" },
+    "csrf": { "status": "warn", "count": 0, "note": "纯API前后端分离场景，无状态变更可接受" },
+    "vhtml": { "status": "warn", "count": 3, "note": "1处未净化(ProductDetail.vue)" },
+    "cors": { "status": "fail", "count": 1, "note": "nacos-config.yml allowed-origins:*" },
+    "dollar": { "status": "warn", "count": 28, "note": "大多为XML/Logback变量替换，非SQL风险" }
+  },
+  "middleware": {
+    "ip": { "status": "warn", "count": 19, "suppressed": true, "note": "localhost only" },
+    "password": { "status": "warn", "count": 3, "suppressed": true, "note": "dev config only" },
+    "feign": { "status": "pass", "count": 0, "note": "Feign超时已通过Resilience4j配置" },
+    "hikari": { "status": "pass", "count": 0, "note": "连接池已统一配置(通用20/高并发50)" },
+    "idempotent": { "status": "warn", "count": 0, "note": "部分MQ消费者缺少幂等检查" },
+    "sentinel": { "status": "pass", "count": 0, "note": "Sentinel规则源已配置Nacos" }
+  },
+  "recentRuns": [
+    { "time": "2026-03-31T12:00:00+08:00", "type": "后端规范", "passed": 3, "failed": 0, "warnings": 4 },
+    { "time": "2026-03-31T12:00:00+08:00", "type": "前端规范", "passed": 1, "failed": 3, "warnings": 3 },
+    { "time": "2026-03-31T12:00:00+08:00", "type": "安全规范", "passed": 2, "failed": 1, "warnings": 5 },
+    { "time": "2026-03-31T12:00:00+08:00", "type": "中间件规范", "passed": 3, "failed": 0, "warnings": 3 }
+  ]
+}

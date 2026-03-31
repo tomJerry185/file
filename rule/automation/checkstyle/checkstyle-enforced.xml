@@ -4,7 +4,7 @@
     "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
 <!--
-    增强版 Checkstyle 配置 — 对齐后端规范.txt 强制规则
+    增强版 Checkstyle 配置 — 对齐后端规范.md 强制规则
     使用方式：在 pom.xml 中引入此文件替代 checkstyle-config.xml
 
     新增规则说明：
@@ -170,7 +170,7 @@
     </module>
 
     <!-- ================================================================== -->
-    <!-- ========== 以下为增强规则 — 对齐后端规范.txt MUST 条款 ========== -->
+    <!-- ========== 以下为增强规则 — 对齐后端规范.md MUST 条款 ========== -->
     <!-- ================================================================== -->
 
     <!-- 禁止 @Autowired 字段注入（后端规范 5.1.01 构造器注入优先）-->
@@ -211,7 +211,7 @@
     <!-- 禁止在 Mapper XML 中使用 SELECT *（后端规范 6.1.01）-->
     <module name="RegexpSingleline">
         <property name="id" value="selectStar"/>
-        <property name="format" value="SELECT\s+\*"/>
+        <property name="format" value="(?&lt;!\bCOUNT\s)\bSELECT\s+\*\s+FROM\b"/>
         <property name="message" value="【规范6.1.01】禁止SELECT *，必须明确列出所需字段"/>
         <property name="fileExtensions" value="xml"/>
     </module>

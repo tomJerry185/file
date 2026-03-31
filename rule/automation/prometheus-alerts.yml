@@ -2,6 +2,14 @@
 # Prometheus Alerting Rules Configuration
 # 目标：监控工程核心指标、服务质量、安全合规
 
+global:
+  resolve_timeout: 5m
+  evaluation_interval: 1m
+  external_labels:
+    cluster: shop-production
+    environment: production
+    region: cn
+
 groups:
   # 服务可用性
   - name: service_availability
@@ -131,7 +139,7 @@ groups:
     rules:
       - alert: CriticalVulnerabilityDetected
         expr: |
-          max(severity{type="critical"}) > 0
+          count(vulnerability_info{severity="critical"} == 1) > 0
         for: 1m
         labels:
           severity: P0
@@ -150,12 +158,3 @@ groups:
         annotations:
           summary: "未授权访问尝试过多"
           description: "401错误率 {{ $value | humanizeRate }} 次/分钟"
-
-# 全局配置
-global:
-  resolve_timeout: 5m
-  evaluation_interval: 1m
-  external_labels:
-    cluster: shop-production
-    environment: production
-    region: cn

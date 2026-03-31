@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="790ac23f-940c-4596-b5b6-def9dcd172f7" name="更改" comment="AI智能体生成代码规范文件，建议全部看一遍再使用，每次使用时，让AI读取相应的规范再修改代码，最好是备份代码，因为AI并不是尽人意的。" />
+    <list default="true" id="790ac23f-940c-4596-b5b6-def9dcd172f7" name="更改" comment="结构调整">
+      <change afterPath="$PROJECT_DIR$/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/modules.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -19,10 +22,10 @@
   <component name="GithubDefaultAccount">
     <option name="defaultAccountId" value="429ad172-c33a-4a98-ba84-886277e58121" />
   </component>
-  <component name="KubernetesApiPersistence"><![CDATA[{}]]></component>
-  <component name="KubernetesApiProvider"><![CDATA[{
-  "isMigrated": true
-}]]></component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 2
 }</component>
@@ -34,30 +37,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/demo/file/.idea/rule",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/demo/file/.idea/rule&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\demo\file\.idea\rule" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\demo\file" />
       <recent name="D:\demo\file\.idea\链接" />
     </key>
   </component>
@@ -82,7 +86,7 @@
       <workItem from="1766552980742" duration="1381000" />
       <workItem from="1773911018401" duration="1216000" />
       <workItem from="1774012966618" duration="656000" />
-      <workItem from="1774800383272" duration="963000" />
+      <workItem from="1774800383272" duration="1388000" />
     </task>
     <task id="LOCAL-00001" summary="20251210整理文件">
       <option name="closed" value="true" />
@@ -124,7 +128,15 @@
       <option name="project" value="LOCAL" />
       <updated>1774800558033</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="结构调整">
+      <option name="closed" value="true" />
+      <created>1774801576063</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1774801576063</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -134,6 +146,7 @@
     <MESSAGE value="20251210整理文件" />
     <MESSAGE value="整理文件" />
     <MESSAGE value="AI智能体生成代码规范文件，建议全部看一遍再使用，每次使用时，让AI读取相应的规范再修改代码，最好是备份代码，因为AI并不是尽人意的。" />
-    <option name="LAST_COMMIT_MESSAGE" value="AI智能体生成代码规范文件，建议全部看一遍再使用，每次使用时，让AI读取相应的规范再修改代码，最好是备份代码，因为AI并不是尽人意的。" />
+    <MESSAGE value="结构调整" />
+    <option name="LAST_COMMIT_MESSAGE" value="结构调整" />
   </component>
 </project>

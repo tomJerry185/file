@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # 中间件规范合规检查脚本
-# 对齐文件：rule/中间件规范.txt
+# 对齐文件：rule/中间件规范.md
 # 用途：CI/CD 集成或本地 pre-commit 检查
 # 使用：bash rule/automation/scripts/check-middleware-rules.sh [项目根目录]
 # =============================================================================
@@ -66,8 +66,10 @@ check_hardcoded_ip() {
     while IFS= read -r line; do
         local file=$(echo "$line" | cut -d: -f1)
         local lineno=$(echo "$line" | cut -d: -f2)
+        # 提取完整内容行（保留匹配内容用于排除判断）
+        local content=$(echo "$line" | cut -d: -f3-)
         # 排除使用变量引用的行 ${} 和 localhost/127.0.0.1
-        if ! echo "$line" | grep -qE '\$\{|localhost|127\.0\.0\.1'; then
+        if ! echo "$content" | grep -qE '\$\{|localhost|127\.0\.0\.1'; then
             count=$((count + 1))
             if [ "$count" -le 10 ]; then
                 details="${details}\n    ${file}:${lineno}"
@@ -201,7 +203,7 @@ check_sentinel_rules() {
 echo "============================================"
 echo "  中间件规范合规检查"
 echo "  项目: ${PROJECT_ROOT}"
-echo "  对齐: rule/中间件规范.txt"
+echo "  对齐: rule/中间件规范.md"
 echo "============================================"
 echo ""
 

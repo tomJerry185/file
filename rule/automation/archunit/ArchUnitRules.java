@@ -14,25 +14,25 @@ import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.sli
  *
  * 使用方式：
  * 1. 将此文件复制到各服务的 src/test/java 对应包下
- * 2. 添加依赖：
+ * 2. 修改 BASE_PACKAGE 为实际的服务包路径（默认 org.example）
+ * 3. 添加依赖：
  *    <dependency>
  *        <groupId>com.tngtech.archunit</groupId>
  *        <artifactId>archunit-junit5</artifactId>
  *        <version>1.2.1</version>
  *        <scope>test</scope>
  *    </dependency>
- * 3. 根据实际包结构调整 PACKAGE 常量
  * 4. 运行 mvn test -Dtest=ArchUnitRules
  *
  * 对齐规范：
- * - 后端规范.txt 1.2.02 分层架构
- * - 后端规范.txt 2.1.01 Controller职责
- * - 后端规范.txt 2.2.01 Service接口规范
+ * - 后端规范.md 1.2.02 分层架构
+ * - 后端规范.md 2.1.01 Controller职责
+ * - 后端规范.md 2.2.01 Service接口规范
  */
 class ArchUnitRules {
 
-    // TODO: 修改为实际的服务包路径
-    private static final String BASE_PACKAGE = "org.example";
+    // 根据实际服务修改包路径，例如 org.example.ordercenter / org.example.bizcenter
+    private static final String BASE_PACKAGE = System.getProperty("archunit.base.package", "org.example");
     private static final String CONTROLLER_PACKAGE = "..controller..";
     private static final String SERVICE_PACKAGE = "..service..";
     private static final String MAPPER_PACKAGE = "..mapper..";

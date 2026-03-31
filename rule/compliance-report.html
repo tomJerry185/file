@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>规范合规度仪表盘 | Spec Compliance Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7fa; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 { text-align: center; margin-bottom: 5px; font-size: 24px; }
+        .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .card h2 { font-size: 16px; margin-bottom: 15px; color: #555; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .metric { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+        .metric:last-child { border-bottom: none; }
+        .metric-label { font-size: 14px; color: #666; }
+        .metric-value { font-size: 20px; font-weight: bold; }
+        .metric-value.green { color: #52c41a; }
+        .metric-value.yellow { color: #faad14; }
+        .metric-value.red { color: #ff4d4f; }
+        .progress-bar { width: 100%; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+        .progress-fill.green { background: linear-gradient(90deg, #52c41a, #73d13d); }
+        .progress-fill.yellow { background: linear-gradient(90deg, #faad14, #ffc53d); }
+        .progress-fill.red { background: linear-gradient(90deg, #ff4d4f, #ff7875); }
+        .summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; }
+        .summary-row .label { color: #888; }
+        .summary-row .value { font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #fafafa; text-align: left; padding: 10px 12px; font-weight: 600; color: #555; border-bottom: 2px solid #eee; }
+        td { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; }
+        tr:hover { background: #fafafa; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+        .badge.pass { background: #f6ffed; color: #52c41a; }
+        .badge.fail { background: #fff2f0; color: #ff4d4f; }
+        .badge.warn { background: #fffbe6; color: #faad14; }
+        .last-update { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+        .chart-placeholder { width: 100%; height: 200px; background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #1890ff; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>规范合规度仪表盘</h1>
+        <p class="subtitle">Spec Compliance Dashboard — 自动生成</p>
+
+        <div class="grid">
+            <!-- 总览 -->
+            <div class="card">
+                <h2>合规度总览</h2>
+                <div class="metric">
+                    <span class="metric-label">总 MUST 规则数</span>
+                    <span class="metric-value" id="total-rules">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">已自动化规则数</span>
+                    <span class="metric-value green" id="automated-rules">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">当前违规数</span>
+                    <span class="metric-value" id="violations">—</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">合规率</span>
+                    <span class="metric-value green" id="compliance-rate">—</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill green" id="compliance-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- 后端规范 -->
+            <div class="card">
+                <h2>后端规范合规</h2>
+                <div class="summary-row"><span class="label">@Autowired 字段注入</span><span class="value" id="be-autowired">—</span></div>
+                <div class="summary-row"><span class="label">SELECT * 使用</span><span class="value" id="be-select-star">—</span></div>
+                <div class="summary-row"><span class="label">Controller 跨层调用</span><span class="value" id="be-cross-layer">—</span></div>
+                <div class="summary-row"><span class="label">System.out.println</span><span class="value" id="be-sout">—</span></div>
+                <div class="summary-row"><span class="label">空 catch 块</span><span class="value" id="be-empty-catch">—</span></div>
+                <div class="summary-row"><span class="label">Service 无接口</span><span class="value" id="be-no-interface">—</span></div>
+            </div>
+
+            <!-- 前端规范 -->
+            <div class="card">
+                <h2>前端规范合规</h2>
+                <div class="summary-row"><span class="label">script setup 使用率</span><span class="value" id="fe-script-setup">—</span></div>
+                <div class="summary-row"><span class="label">TypeScript 使用率</span><span class="value" id="fe-typescript">—</span></div>
+                <div class="summary-row"><span class="label">console.log 残留</span><span class="value" id="fe-console">—</span></div>
+                <div class="summary-row"><span class="label">v-html 使用</span><span class="value" id="fe-vhtml">—</span></div>
+                <div class="summary-row"><span class="label">TypeScript any 使用</span><span class="value" id="fe-any">—</span></div>
+                <div class="summary-row"><span class="label">硬编码颜色</span><span class="value" id="fe-colors">—</span></div>
+            </div>
+
+            <!-- 安全规范 -->
+            <div class="card">
+                <h2>安全规范合规</h2>
+                <div class="summary-row"><span class="label">API 限流配置</span><span class="value" id="sec-rate">—</span></div>
+                <div class="summary-row"><span class="label">硬编码密钥</span><span class="value" id="sec-secrets">—</span></div>
+                <div class="summary-row"><span class="label">CSRF 防护</span><span class="value" id="sec-csrf">—</span></div>
+                <div class="summary-row"><span class="label">v-html 净化</span><span class="value" id="sec-vhtml">—</span></div>
+                <div class="summary-row"><span class="label">CORS 通配符</span><span class="value" id="sec-cors">—</span></div>
+                <div class="summary-row"><span class="label">MyBatis ${} 使用</span><span class="value" id="sec-dollar">—</span></div>
+            </div>
+
+            <!-- 中间件规范 -->
+            <div class="card">
+                <h2>中间件规范合规</h2>
+                <div class="summary-row"><span class="label">硬编码 IP</span><span class="value" id="mw-ip">—</span></div>
+                <div class="summary-row"><span class="label">硬编码密码</span><span class="value" id="mw-password">—</span></div>
+                <div class="summary-row"><span class="label">Feign 超时配置</span><span class="value" id="mw-feign">—</span></div>
+                <div class="summary-row"><span class="label">HikariCP 连接池</span><span class="value" id="mw-hikari">—</span></div>
+                <div class="summary-row"><span class="label">MQ 幂等处理</span><span class="value" id="mw-idempotent">—</span></div>
+                <div class="summary-row"><span class="label">Sentinel 规则源</span><span class="value" id="mw-sentinel">—</span></div>
+            </div>
+
+            <!-- 趋势图 -->
+            <div class="card">
+                <h2>合规率趋势（最近 30 天）</h2>
+                <div class="chart-placeholder" id="trend-chart">
+                    加载中... 将 CI 数据写入 compliance-data.json 后自动渲染
+                </div>
+            </div>
+        </div>
+
+        <!-- 最近检查结果 -->
+        <div class="card">
+            <h2>最近检查结果</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>检查类型</th>
+                        <th>通过</th>
+                        <th>失败</th>
+                        <th>警告</th>
+                        <th>结果</th>
+                    </tr>
+                </thead>
+                <tbody id="results-table">
+                    <tr><td colspan="6" style="text-align:center;color:#999;padding:30px;">加载中... 将 CI 数据写入 compliance-data.json</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <p class="last-update">数据来源：CI/CD 流水线 | 生成时间：<span id="gen-time">—</span></p>
+    </div>
+
+    <script>
+        // 加载合规数据
+        fetch('compliance-data.json')
+            .then(r => r.json())
+            .then(data => render(data))
+            .catch(() => renderFallback());
+
+        function render(data) {
+            // 总览
+            document.getElementById('total-rules').textContent = data.totalRules;
+            document.getElementById('automated-rules').textContent = data.automatedRules;
+            document.getElementById('violations').textContent = data.violations;
+            const rate = ((data.automatedRules - data.violations) / data.automatedRules * 100).toFixed(1);
+            const rateEl = document.getElementById('compliance-rate');
+            rateEl.textContent = rate + '%';
+            rateEl.className = 'metric-value ' + (rate >= 90 ? 'green' : rate >= 70 ? 'yellow' : 'red');
+            const bar = document.getElementById('compliance-bar');
+            bar.style.width = rate + '%';
+            bar.className = 'progress-fill ' + (rate >= 90 ? 'green' : rate >= 70 ? 'yellow' : 'red');
+
+            // 各模块详细数据
+            if (data.backend) Object.entries(data.backend).forEach(([k, v]) => {
+                const el = document.getElementById('be-' + k);
+                if (el) el.innerHTML = renderValue(v);
+            });
+            if (data.frontend) Object.entries(data.frontend).forEach(([k, v]) => {
+                const el = document.getElementById('fe-' + k);
+                if (el) el.innerHTML = renderValue(v);
+            });
+            if (data.security) Object.entries(data.security).forEach(([k, v]) => {
+                const el = document.getElementById('sec-' + k);
+                if (el) el.innerHTML = renderValue(v);
+            });
+            if (data.middleware) Object.entries(data.middleware).forEach(([k, v]) => {
+                const el = document.getElementById('mw-' + k);
+                if (el) el.innerHTML = renderValue(v);
+            });
+
+            // 检查结果表
+            if (data.recentRuns && data.recentRuns.length > 0) {
+                const tbody = document.getElementById('results-table');
+                tbody.innerHTML = data.recentRuns.map(r => `
+                    <tr>
+                        <td>${r.time}</td>
+                        <td>${r.type}</td>
+                        <td class="green">${r.passed}</td>
+                        <td class="red">${r.failed}</td>
+                        <td class="yellow">${r.warnings}</td>
+                        <td><span class="badge ${r.failed > 0 ? 'fail' : r.warnings > 0 ? 'warn' : 'pass'}">${r.failed > 0 ? '不通过' : r.warnings > 0 ? '警告' : '通过'}</span></td>
+                    </tr>
+                `).join('');
+            }
+
+            document.getElementById('gen-time').textContent = new Date().toLocaleString('zh-CN');
+        }
+
+        function renderValue(v) {
+            if (v.status === 'pass') return '<span class="badge pass">通过</span>';
+            if (v.status === 'warn') {
+                let detail = v.count + ' 处警告';
+                if (v.suppressed) detail += '（已抑制）';
+                if (v.rate) detail += ' | ' + v.rate;
+                if (v.note) detail += ' <span style="color:#999;font-size:11px;">' + v.note + '</span>';
+                return `<span class="badge warn">${detail}</span>`;
+            }
+            let detail = v.count + ' 处违规';
+            if (v.rate) detail += ' | ' + v.rate;
+            if (v.note) detail += ' <span style="color:#999;font-size:11px;">' + v.note + '</span>';
+            return `<span class="badge fail">${detail}</span>`;
+        }
+
+        function renderFallback() {
+            document.getElementById('total-rules').textContent = '120+';
+            document.getElementById('automated-rules').textContent = '48';
+            document.getElementById('violations').textContent = '—';
+            document.getElementById('compliance-rate').textContent = '—';
+            document.getElementById('compliance-bar').style.width = '0%';
+            document.getElementById('trend-chart').textContent = '需要 CI 数据：将 spec-compliance.yml 输出写入 compliance-data.json';
+            document.getElementById('gen-time').textContent = new Date().toLocaleString('zh-CN');
+        }
+    </script>
+</body>
+</html>

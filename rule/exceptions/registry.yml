@@ -1,0 +1,232 @@
+# 规范例外注册表
+# Rule Exception Registry
+#
+# 每个例外包含：id / rule / scope / reason / owner / expires / ticket
+# CI 脚本读取此文件，对已注册例外放行，过期例外自动变为违规
+# 每月生成例外报告
+
+---
+exceptions:
+  # ==================== Phase 1: @Autowired 字段注入迁移 ====================
+  - id: EXC-001
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "ai-center/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "ai-center team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1001"
+    autoExpire: true
+
+  - id: EXC-002
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "api-gateway/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "api-gateway team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1002"
+    autoExpire: true
+
+  - id: EXC-003
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "biz-center/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "biz-center team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1003"
+    autoExpire: true
+
+  - id: EXC-004
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "common/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "common team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1004"
+    autoExpire: true
+
+  - id: EXC-005
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "infrastructure-center/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "infrastructure-center team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1005"
+    autoExpire: true
+
+  - id: EXC-006
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "message-center/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "message-center team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1006"
+    autoExpire: true
+
+  - id: EXC-007
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "monitor-center/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "monitor-center team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1007"
+    autoExpire: true
+
+  - id: EXC-008
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "order-center/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "order-center team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1008"
+    autoExpire: true
+
+  - id: EXC-009
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "payment-center/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "payment-center team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1009"
+    autoExpire: true
+
+  - id: EXC-010
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "scheduler-center/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "scheduler-center team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1010"
+    autoExpire: true
+
+  - id: EXC-011
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "seckill-center/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "seckill-center team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1011"
+    autoExpire: true
+
+  - id: EXC-012
+    rule: SEC-AUTOWIRED
+    ruleId: BE-DI-001
+    scope: "user-admin-center/src/main/java/**"
+    reason: "遗留代码使用字段注入，需逐步迁移为构造器注入"
+    owner: "user-admin-center team lead"
+    expires: "2026-09-30"
+    ticket: "SHOP-1012"
+    autoExpire: true
+
+  # ==================== Phase 2: SELECT * 迁移 ====================
+  - id: EXC-013
+    rule: SEC-SQL-001
+    ruleId: BE-SQL-001
+    scope: "ai-center/src/main/resources/mapper/AiModelConfigMapper.xml"
+    reason: "Mapper 使用 SELECT *，需迁移为明确字段列表"
+    owner: "ai-center team lead"
+    expires: "2026-06-30"
+    ticket: "SHOP-1013"
+    autoExpire: true
+
+  # ==================== Phase 3: System.out/err.println 迁移 ====================
+  - id: EXC-014
+    rule: SEC-SYSTEM-OUT
+    ruleId: BE-COD-001
+    scope: "order-center/src/main/java/**/CryptoUtil.java"
+    reason: "遗留调试输出，需替换为 SLF4J Logger"
+    owner: "order-center team lead"
+    expires: "2026-06-30"
+    ticket: "SHOP-1014"
+    autoExpire: true
+
+  - id: EXC-015
+    rule: SEC-SYSTEM-OUT
+    ruleId: BE-COD-001
+    scope: "common/src/main/java/**/CacheOptimizationConfig.java"
+    reason: "遗留异常输出，需替换为 SLF4J Logger"
+    owner: "common team lead"
+    expires: "2026-06-30"
+    ticket: "SHOP-1015"
+    autoExpire: true
+
+  - id: EXC-016
+    rule: SEC-SYSTEM-OUT
+    ruleId: BE-COD-001
+    scope: "user-admin-center/src/main/java/**/RocketMQEnabledCondition.java"
+    reason: "遗留状态输出，需替换为 SLF4J Logger"
+    owner: "user-admin-center team lead"
+    expires: "2026-06-30"
+    ticket: "SHOP-1016"
+    autoExpire: true
+
+  - id: EXC-017
+    rule: SEC-SYSTEM-OUT
+    ruleId: BE-COD-001
+    scope: "biz-center/src/main/java/**/RocketMQEnabledCondition.java"
+    reason: "遗留状态输出，需替换为 SLF4J Logger"
+    owner: "biz-center team lead"
+    expires: "2026-06-30"
+    ticket: "SHOP-1017"
+    autoExpire: true
+
+  - id: EXC-018
+    rule: SEC-SYSTEM-OUT
+    ruleId: BE-COD-001
+    scope: "monitor-center/src/main/java/**/LoggingConfig.java"
+    reason: "遗留降级输出，需替换为 SLF4J Logger"
+    owner: "monitor-center team lead"
+    expires: "2026-06-30"
+    ticket: "SHOP-1018"
+    autoExpire: true
+
+  - id: EXC-019
+    rule: SEC-SYSTEM-OUT
+    ruleId: BE-COD-001
+    scope: "scheduler-center/src/main/java/**/FeignConfig.java"
+    reason: "遗留异常输出，需替换为 SLF4J Logger"
+    owner: "scheduler-center team lead"
+    expires: "2026-06-30"
+    ticket: "SHOP-1019"
+    autoExpire: true
+
+  # ==================== Phase 4: 开发环境硬编码 ====================
+  - id: EXC-020
+    rule: SEC-HARDCODED-PASSWORD
+    ruleId: MW-CFG-001
+    scope: "user-admin-center/src/main/resources/application-simple.yml"
+    reason: "开发环境配置文件，仅用于本地开发，不部署到生产"
+    owner: "user-admin-center team lead"
+    expires: "2026-06-30"
+    ticket: "SHOP-1020"
+    autoExpire: true
+
+  - id: EXC-021
+    rule: SEC-HARDCODED-PASSWORD
+    ruleId: MW-CFG-001
+    scope: "**/src/main/resources/application.yml"
+    reason: "环境变量默认值占位符，CI/生产环境通过环境变量注入真实值"
+    owner: "DevOps"
+    expires: "2026-09-30"
+    ticket: "SHOP-1021"
+    autoExpire: true
+
+  - id: EXC-022
+    rule: SEC-HARDCODED-IP
+    ruleId: MW-CFG-002
+    scope: "**/src/main/resources/bootstrap.yml"
+    reason: "本地开发配置（127.0.0.1），生产环境通过 NACOS_ADDR 环境变量覆盖"
+    owner: "DevOps"
+    expires: "2026-09-30"
+    ticket: "SHOP-1022"
+    autoExpire: true

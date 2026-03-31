@@ -1,0 +1,72 @@
+name: Spec Compliance Check
+
+on:
+  pull_request:
+    branches: [ main, dev, develop ]
+  push:
+    branches: [ dev, develop ]
+  workflow_dispatch:
+
+jobs:
+  backend-rules:
+    name: Backend Rules Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run backend rules check
+        run: bash rule/automation/scripts/check-backend-rules.sh "$GITHUB_WORKSPACE"
+
+  frontend-rules:
+    name: Frontend Rules Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run frontend rules check
+        run: bash rule/automation/scripts/check-frontend-rules.sh "$GITHUB_WORKSPACE/frontend"
+
+  middleware-rules:
+    name: Middleware Rules Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run middleware rules check
+        run: bash rule/automation/scripts/check-middleware-rules.sh "$GITHUB_WORKSPACE"
+
+  security-rules:
+    name: Security Rules Compliance
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run security rules check
+        run: bash rule/automation/scripts/check-security-rules.sh "$GITHUB_WORKSPACE"
+
+  spec-summary:
+    name: Spec Compliance Summary
+    runs-on: ubuntu-latest
+    needs: [ backend-rules, frontend-rules, middleware-rules, security-rules ]
+    if: always()
+    steps:
+      - name: Check results
+        run: |
+          echo "============================================"
+          echo "  规范合规检查总结"
+          echo "============================================"
+          echo "  后端规范: ${{ needs.backend-rules.result }}"
+          echo "  前端规范: ${{ needs.frontend-rules.result }}"
+          echo "  中间件规范: ${{ needs.middleware-rules.result }}"
+          echo "  安全规范: ${{ needs.security-rules.result }}"
+          echo ""
+
+          if [[ "${{ needs.backend-rules.result }}" == "failure" ]] || \
+             [[ "${{ needs.frontend-rules.result }}" == "failure" ]] || \
+             [[ "${{ needs.middleware-rules.result }}" == "failure" ]] || \
+             [[ "${{ needs.security-rules.result }}" == "failure" ]]; then
+            echo "::error::存在规范合规检查失败，请修复后重新提交。"
+            exit 1
+          else
+            echo "所有规范合规检查通过。"
+          fi

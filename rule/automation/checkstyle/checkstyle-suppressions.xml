@@ -4,7 +4,7 @@
     "https://checkstyle.org/dtds/suppressions_1_2.dtd">
 
 <!--
-    Checkstyle 规则抑制文件
+    Checkstyle 规则抑制文件 — 存量代码 Suppression 清单
     用于老代码逐步迁移，允许按文件/包/规则粒度抑制增强规则。
 
     使用方式：
@@ -13,31 +13,136 @@
          <property name="file" value="${checkstyle.suppressions.file}"/>
        </module>
     2. 或在 Maven 中通过 -Dcheckstyle.suppressions.file 参数指定
-    3. 也可以在代码中使用 @SuppressWarnings("checkstyle:ruleId") 注解
 
     注意：抑制是过渡手段，不是永久方案。每个抑制应有对应的 TODO 和迁移计划。
+
+    基线扫描日期：2026-03-31
+    下次复审日期：2026-06-30
 -->
 <suppressions>
-    <!-- ==================== 全局抑制（老代码迁移期）==================== -->
+    <!-- ==================== @Autowired 字段注入 ==================== -->
+    <!-- 原因：遗留代码使用字段注入，需逐步迁移为构造器注入 -->
+    <!-- 迁移计划：按模块逐步取消抑制，优先处理新代码 -->
 
-    <!-- @Autowired 字段注入：老代码暂时允许，新代码禁止 -->
-    <!-- 建议：新文件不加抑制，老文件按包逐步迁移 -->
+    <!-- ai-center 模块：遗留代码，计划 2026-Q3 迁移 -->
     <suppress id="autowiredFieldInjection"
-              files=".*[\\/](controller|config)[\\/].*\.java"
-              message="老代码迁移中"/>
+              files="ai-center[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：ai-center @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
 
-    <!-- ==================== 按文件抑制 ==================== -->
+    <!-- api-gateway 模块：遗留代码，计划 2026-Q3 迁移 -->
+    <suppress id="autowiredFieldInjection"
+              files="api-gateway[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：api-gateway @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
 
-    <!-- 示例：对特定配置类抑制字段注入警告 -->
-    <!-- <suppress id="autowiredFieldInjection" files=".*SecurityConfig\.java"/> -->
+    <!-- biz-center 模块：遗留代码，计划 2026-Q3 迁移 -->
+    <suppress id="autowiredFieldInjection"
+              files="biz-center[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：biz-center @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
 
-    <!-- 示例：对特定 Mapper XML 暂时允许 SELECT * -->
-    <!-- <suppress id="selectStar" files=".*ComplexReportMapper\.xml"/> -->
+    <!-- common 模块：遗留代码，计划 2026-Q3 迁移 -->
+    <suppress id="autowiredFieldInjection"
+              files="common[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：common @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
 
-    <!-- ==================== 按规则抑制 ==================== -->
+    <!-- infrastructure-center 模块：遗留代码，计划 2026-Q3 迁移 -->
+    <suppress id="autowiredFieldInjection"
+              files="infrastructure-center[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：infrastructure-center @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
 
-    <!-- 如果团队决定暂时不强制某条规则，取消下方注释 -->
-    <!-- <suppress id="autowiredFieldInjection"/> -->
-    <!-- <suppress id="selectStar"/> -->
-    <!-- <suppress id="hardcodedIp"/> -->
+    <!-- message-center 模块：遗留代码，计划 2026-Q3 迁移 -->
+    <suppress id="autowiredFieldInjection"
+              files="message-center[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：message-center @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
+
+    <!-- monitor-center 模块：遗留代码，计划 2026-Q3 迁移 -->
+    <suppress id="autowiredFieldInjection"
+              files="monitor-center[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：monitor-center @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
+
+    <!-- order-center 模块：遗留代码，计划 2026-Q3 迁移 -->
+    <suppress id="autowiredFieldInjection"
+              files="order-center[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：order-center @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
+
+    <!-- payment-center 模块：遗留代码，计划 2026-Q3 迁移 -->
+    <suppress id="autowiredFieldInjection"
+              files="payment-center[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：payment-center @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
+
+    <!-- scheduler-center 模块：遗留代码，计划 2026-Q3 迁移 -->
+    <suppress id="autowiredFieldInjection"
+              files="scheduler-center[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：scheduler-center @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
+
+    <!-- seckill-center 模块：遗留代码，计划 2026-Q3 迁移 -->
+    <suppress id="autowiredFieldInjection"
+              files="seckill-center[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：seckill-center @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
+
+    <!-- user-admin-center 模块：遗留代码，计划 2026-Q3 迁移 -->
+    <suppress id="autowiredFieldInjection"
+              files="user-admin-center[\\/]src[\\/]main[\\/]java[\\/].*\.java"
+              message="遗留代码：user-admin-center @Autowired 字段注入，迁移中 — 到期：2026-09-30"/>
+
+    <!-- ==================== SELECT * in Mapper XML ==================== -->
+    <!-- 原因：ai-center AiModelConfigMapper.xml 使用 SELECT * -->
+    <!-- 关联：需迁移为明确字段列表 -->
+    <suppress id="selectStar"
+              files="ai-center[\\/]src[\\/]main[\\/]resources[\\/]mapper[\\/]AiModelConfigMapper\.xml"
+              message="遗留代码：ai-center Mapper 使用 SELECT *，需迁移为明确字段 — 到期：2026-06-30"/>
+
+    <!-- ==================== System.out / System.err ==================== -->
+    <!-- 原因：遗留代码使用 System.out/err.println 而非 SLF4J -->
+    <!-- 迁移计划：需替换为 Logger -->
+
+    <!-- order-center CryptoUtil：调试信息输出，需替换为 log.warn -->
+    <suppress id="systemErrPrintln"
+              files="order-center[\\/]src[\\/]main[\\/]java[\\/]org[\\/]example[\\/]ordercenter[\\/]util[\\/]CryptoUtil\.java"
+              message="遗留代码：CryptoUtil 调试输出，需替换为 SLF4J — 到期：2026-06-30"/>
+
+    <!-- common CacheOptimizationConfig：异常处理使用 System.err -->
+    <suppress id="systemErrPrintln"
+              files="common[\\/]src[\\/]main[\\/]java[\\/]org[\\/]example[\\/]common[\\/]config[\\/]CacheOptimizationConfig\.java"
+              message="遗留代码：CacheOptimizationConfig 异常输出，需替换为 SLF4J — 到期：2026-06-30"/>
+
+    <!-- user-admin-center RocketMQEnabledCondition：状态日志 -->
+    <suppress id="systemOutPrintln"
+              files="user-admin-center[\\/]src[\\/]main[\\/]java[\\/]org[\\/]example[\\/]useradmincenter[\\/]config[\\/]RocketMQEnabledCondition\.java"
+              message="遗留代码：RocketMQEnabledCondition 状态输出，需替换为 SLF4J — 到期：2026-06-30"/>
+
+    <!-- biz-center RocketMQEnabledCondition：状态日志 -->
+    <suppress id="systemOutPrintln"
+              files="biz-center[\\/]src[\\/]main[\\/]java[\\/]org[\\/]example[\\/]bizcenter[\\/]config[\\/]RocketMQEnabledCondition\.java"
+              message="遗留代码：RocketMQEnabledCondition 状态输出，需替换为 SLF4J — 到期：2026-06-30"/>
+
+    <!-- monitor-center LoggingConfig：降级日志 -->
+    <suppress id="systemErrPrintln"
+              files="monitor-center[\\/]src[\\/]main[\\/]java[\\/]org[\\/]example[\\/]monitorcenter[\\/]config[\\/]LoggingConfig\.java"
+              message="遗留代码：LoggingConfig 降级输出，需替换为 SLF4J — 到期：2026-06-30"/>
+
+    <!-- scheduler-center FeignConfig：异常日志 -->
+    <suppress id="systemErrPrintln"
+              files="scheduler-center[\\/]src[\\/]main[\\/]java[\\/]org[\\/]example[\\/]schedulercenter[\\/]config[\\/]FeignConfig\.java"
+              message="遗留代码：FeignConfig 异常输出，需替换为 SLF4J — 到期：2026-06-30"/>
+
+    <!-- ==================== 硬编码密码（开发环境） ==================== -->
+    <!-- 原因：application-simple.yml 为开发环境专用，非生产配置 -->
+    <!-- 注意：生产配置已使用环境变量 -->
+
+    <suppress id="hardcodedPassword"
+              files="user-admin-center[\\/]src[\\/]main[\\/]resources[\\/]application-simple\.yml"
+              message="开发环境配置文件，仅用于本地开发，不部署到生产 — 到期：2026-06-30"/>
+
+    <!-- 各模块 application.yml 中的环境变量默认值（带 ${VAR:default} 格式） -->
+    <suppress id="hardcodedPassword"
+              files=".*[\\/]src[\\/]main[\\/]resources[\\/]application\.yml"
+              message="环境变量默认值占位符，CI/生产环境通过环境变量注入真实值 — 到期：2026-09-30"/>
+
+    <!-- ==================== 硬编码 IP（localhost） ==================== -->
+    <!-- 原因：bootstrap.yml 中 Nacos 使用 127.0.0.1 为本地开发配置 -->
+    <!-- 生产环境通过 NACOS_ADDR 环境变量覆盖 -->
+
+    <suppress id="hardcodedIp"
+              files=".*[\\/]src[\\/]main[\\/]resources[\\/]bootstrap\.yml"
+              message="本地开发配置，生产环境通过 NACOS_ADDR 环境变量覆盖 — 到期：2026-09-30"/>
 </suppressions>

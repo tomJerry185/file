@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # 后端规范合规检查脚本
-# 对齐文件：rule/后端规范.txt
+# 对齐文件：rule/后端规范.md
 # 用途：CI/CD 集成或本地 pre-commit 检查
 # 使用：bash rule/automation/scripts/check-backend-rules.sh [项目根目录]
 # =============================================================================
@@ -70,17 +70,20 @@ check_field_injection() {
     local files=""
 
     if [ -d "$SRC_DIR" ]; then
-        # 查找 @Autowired 字段注入（非构造器参数上的）
-        files=$(grep -rl "@Autowired" "$SRC_DIR" --include="*.java" 2>/dev/null || true)
+        # 查找 @Autowired 字段注入（排除构造器参数上的 @Autowired）
+        # 通过检测 @Autowired 注解是否在字段声明行上（非 public/private/protected 开头的构造器参数）
+        while IFS= read -r match; do
+            local file=$(echo "$match" | cut -d: -f1)
+            local lineno=$(echo "$match" | cut -d: -f2)
+            # 读取注解下一行，判断是否为字段注入（行首有空白 + private/protected/public 或直接是类型声明）
+            local next_line=$(sed -n "$((lineno + 1))p" "$file" 2>/dev/null)
+            if echo "$next_line" | grep -qE "^\s*(private|protected|public|volatile|final)\s+\w+"; then
+                autowired_count=$((autowired_count + 1))
+            fi
+        done < <(grep -rn "@Autowired" "$SRC_DIR" --include="*.java" 2>/dev/null | grep -v "/target/" || true)
 
-        for f in $files; do
-            # 统计字段注入（@Autowired 不紧跟构造器参数）
-            local count=$(grep -c "@Autowired" "$f" 2>/dev/null || echo "0")
-            autowired_count=$((autowired_count + count))
-        done
-
-        # 统计 @RequiredArgsConstructor 或构造器注入
-        constructor_count=$(grep -rl "@RequiredArgsConstructor\|@AllArgsConstructor" "$SRC_DIR" --include="*.java" 2>/dev/null | wc -l)
+        # 统计使用构造器注入的文件数（@RequiredArgsConstructor 或 @AllArgsConstructor）
+        constructor_count=$(grep -rl "@RequiredArgsConstructor\|@AllArgsConstructor" "$SRC_DIR" --include="*.java" 2>/dev/null | grep -v "/target/" | wc -l)
     fi
 
     if [ "$autowired_count" -eq 0 ]; then
@@ -258,7 +261,7 @@ check_empty_catch() {
 echo "============================================"
 echo "  后端规范合规检查"
 echo "  项目: ${PROJECT_ROOT}"
-echo "  对齐: rule/后端规范.txt"
+echo "  对齐: rule/后端规范.md"
 echo "============================================"
 echo ""
 
